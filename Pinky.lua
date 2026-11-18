@@ -28,6 +28,7 @@ local W, H = 1024, 512
 -- Innenflaeche des Rahmens (gemessen): x 165..855, y 105..415
 local IN_L, IN_T, IN_R, IN_B = 165, 105, 855, 415
 local ROSTER_L, ROSTER_R = 178, 590
+local SEP_X = 584                       -- senkrechter Trenner zwischen Roster und Detailkarte (Mitte)
 local CARD_X, CARD_Y = 604, 4          -- linke obere Ecke der Kartentextur (256 x 512)
 local SLIDE_BTN_X = 936                 -- Ausklapp-Knopf (64 x 512) am rechten Rand
 local SLIDE_OPEN_X, SLIDE_CLOSED_X = 880, 440
@@ -562,7 +563,6 @@ local lines = {}
 local COLS = { { "name", 0.36, "LEFT", "colName" }, { "level", 0.1, "CENTER", "colLevel" },
     { "className", 0.18, "LEFT", "colClass" }, { "rank", 0.18, "LEFT", "colRank" }, { "zone", 0.18, "LEFT", "colZone" } }
 local LIST_L, LIST_R = ROSTER_L - 6, ROSTER_R - 8
-local SEP_X = 598   -- senkrechter Trenner zwischen Roster und Detailkarte (Mitte)
 local LIST_T = IN_T + 22   -- Kopfzeile unterhalb der inneren Rahmenkante
 
 function Pinky.ListCount()
