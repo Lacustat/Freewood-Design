@@ -503,7 +503,7 @@ local function Plate(i)
     local ds = ph * s * Pinky.DISC_SIZE
     p.disc = Tex(p, "pf_disc", "ARTWORK", 1, 1)
     p.disc:SetSize(ds, ds)
-    p.disc:SetPoint("LEFT", p, "LEFT", ph * s * 0.16, 0)
+    p.disc:SetPoint("LEFT", p, "LEFT", ph * s * 0.16 + 4, 0)   -- 4 Einheiten weiter rechts (etwa 7 Pixel bei Lacustat)
     p.lvl = Font(p, 14, 1, 1, 1, nil, "OUTLINE")   -- Umriss: lesbar auch auf hellem Glas (Schurke, Priester)
     p.lvl:SetPoint("CENTER", p.disc, "CENTER", 0, 0)
     p.name = Font(p, 15, 0.45, 0.9, 0.3)
