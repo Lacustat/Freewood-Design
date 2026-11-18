@@ -158,8 +158,11 @@ P.Select("Pinky Freewood-Realm")
 eq(f.card.prof1.tex, "Interface\\Icons\\INV_Misc_ArmorKit_17", "Lederverarbeitung als Spiel-Icon")
 SlashCmdList.FWPINKY("symbole pinky")
 eq(f.card.prof1.tex, FreewoodDesign.CraftTex("leatherworking"), "eigenes Bild")
+SlashCmdList.FWPINKY("symbole kasten")
+eq(P.CraftBlend(), "box", "mit schwarzem Kasten")
 SlashCmdList.FWPINKY("symbole blizzard")
 eq(P.CraftStyle(), "blizzard", "zurueck")
+eq(P.CraftBlend(), "add", "ohne schwarzen Hintergrund")
 
 -- 7. Befehle
 SlashCmdList.FWPINKY("groesse 300")

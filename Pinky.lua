@@ -36,6 +36,7 @@ local SLIDE_SECS = 0.35
 Pinky.ROW_SCALE = 0.74
 Pinky.ROW_GAP = 6
 Pinky.LIST_ROW_H = 18
+Pinky.PROF_SIZE = 0.36       -- Berufs-Icons auf dem Schild: Anteil der Schildhoehe
 Pinky.PROF_INSET = 30       -- Berufs-Icons: Abstand vom rechten Rand des Schildes (vor der Zierleiste)
 Pinky.FONT_MIN_SCALE = 0.9  -- Schrift wird nicht kleiner als bei 90 %
 
@@ -53,7 +54,7 @@ local L = {
     slideSoon = "Hier kommen die Bereiche hin.",
     scaleSet = "Pinky: Groesse %d %%",
     reset = "Pinky: Position zurueckgesetzt.",
-    help = "/fwpinky (Fenster), /fwpinky groesse 50-150, /fwpinky symbole blizzard|pinky, /fwpinky reset",
+    help = "/fwpinky (Fenster), /fwpinky groesse 50-150, /fwpinky symbole blizzard|kasten|pinky, /fwpinky reset",
     iconsSet = "Pinky: Berufs-Symbole %s",
 }
 if G.GetLocale and G.GetLocale() ~= "deDE" then
@@ -63,7 +64,7 @@ if G.GetLocale and G.GetLocale() ~= "deDE" then
     L.colName, L.colLevel, L.colClass, L.colRank, L.colZone = "Name", "Level", "Class", "Rank", "Zone"
     L.slideSoon = "The sections go here."
     L.scaleSet, L.reset = "Pinky: size %d %%", "Pinky: position reset."
-    L.help = "/fwpinky (window), /fwpinky groesse 50-150, /fwpinky symbole blizzard|pinky, /fwpinky reset"
+    L.help = "/fwpinky (window), /fwpinky groesse 50-150, /fwpinky symbole blizzard|kasten|pinky, /fwpinky reset"
     L.iconsSet = "Pinky: profession icons %s"
 end
 Pinky.L = L
@@ -262,6 +263,10 @@ Pinky.BLIZZ_CRAFT = {
 function Pinky.CraftStyle()
     return DB().craftIcons == "pinky" and "pinky" or "blizzard"
 end
+-- Schwarzer Hintergrund der Spiel-Icons: "add" (Schwarz wird durchsichtig, Farben leuchten leicht) oder "box"
+function Pinky.CraftBlend()
+    return DB().craftBlend == "box" and "box" or "add"
+end
 
 -- Berufs-Symbol in eine Textur setzen; Rueckgabe true, wenn es eines gibt
 function Pinky.SetCraft(t, id)
@@ -272,6 +277,8 @@ function Pinky.SetCraft(t, id)
     t:SetTexture(path)
     -- Spiel-Icons eckig mit beschnittenem Rand (runde Maske verzerrte sie in Forever, 0.2.6)
     if blizz then t:SetTexCoord(0.07, 0.93, 0.07, 0.93) else t:SetTexCoord(0, 1, 0, 1) end
+    -- additives Mischen: Schwarz verschwindet, das Motiv bleibt (nur bei Spiel-Icons)
+    if t.SetBlendMode then t:SetBlendMode((blizz and Pinky.CraftBlend() == "add") and "ADD" or "BLEND") end
     if path then t:Show() else t:Hide() end
     return path ~= nil
 end
@@ -428,14 +435,14 @@ local function Plate(i)
     p.class:SetPoint("LEFT", p, "LEFT", -ph * s * 0.18, 0)
     -- Berufe rechts
     p.prof1 = p:CreateTexture(nil, "OVERLAY")
-    p.prof1:SetSize(ph * s * 0.46, ph * s * 0.46)
-    p.prof1:SetPoint("TOPRIGHT", p, "TOPRIGHT", -Pinky.PROF_INSET, -6)
+    p.prof1:SetSize(ph * s * Pinky.PROF_SIZE, ph * s * Pinky.PROF_SIZE)
+    p.prof1:SetPoint("TOPRIGHT", p, "TOPRIGHT", -Pinky.PROF_INSET, -10)
     p.prof2 = p:CreateTexture(nil, "OVERLAY")
-    p.prof2:SetSize(ph * s * 0.46, ph * s * 0.46)
-    p.prof2:SetPoint("BOTTOMRIGHT", p, "BOTTOMRIGHT", -Pinky.PROF_INSET, 6)
+    p.prof2:SetSize(ph * s * Pinky.PROF_SIZE, ph * s * Pinky.PROF_SIZE)
+    p.prof2:SetPoint("BOTTOMRIGHT", p, "BOTTOMRIGHT", -Pinky.PROF_INSET, 10)
     p.name = Font(p, 15, 0.45, 0.9, 0.3)
     p.name:SetPoint("LEFT", p, "LEFT", ph * s * 0.85, 0)
-    p.name:SetPoint("RIGHT", p, "RIGHT", -(Pinky.PROF_INSET + ph * s * 0.46 + 4), 0)
+    p.name:SetPoint("RIGHT", p, "RIGHT", -(Pinky.PROF_INSET + ph * s * Pinky.PROF_SIZE + 4), 0)
     p.name:SetHeight(ph * s * 0.8)
     p.name:SetWordWrap(true)                 -- lange Namen in zwei Zeilen statt "..."
     if p.name.SetMaxLines then p.name:SetMaxLines(2) end
@@ -976,8 +983,14 @@ G.SlashCmdList["FWPINKY"] = function(msg)
             Say(L.help)
         end
     elseif cmd == "icons" or cmd == "symbole" then
-        DB().craftIcons = (arg == "pinky") and "pinky" or "blizzard"
-        Say(string.format(L.iconsSet, DB().craftIcons))
+        if arg == "kasten" or arg == "box" then
+            DB().craftIcons, DB().craftBlend = "blizzard", "box"
+        elseif arg == "pinky" then
+            DB().craftIcons = "pinky"
+        else
+            DB().craftIcons, DB().craftBlend = "blizzard", "add"
+        end
+        Say(string.format(L.iconsSet, DB().craftIcons .. (DB().craftIcons == "blizzard" and (" / " .. Pinky.CraftBlend()) or "")))
         if f then Pinky.Refresh() end
     elseif cmd == "reset" then
         DB().pos = nil
