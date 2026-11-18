@@ -28,7 +28,7 @@ local W, H = 1024, 512
 -- Innenflaeche des Rahmens (gemessen): x 165..855, y 105..415
 local IN_L, IN_T, IN_R, IN_B = 165, 105, 855, 415
 local ROSTER_L, ROSTER_R = 178, 590
-local CARD_X, CARD_Y = 592, 4          -- linke obere Ecke der Kartentextur (256 x 512)
+local CARD_X, CARD_Y = 604, 4          -- linke obere Ecke der Kartentextur (256 x 512)
 local SLIDE_BTN_X = 936                 -- Ausklapp-Knopf (64 x 512) am rechten Rand
 local SLIDE_OPEN_X, SLIDE_CLOSED_X = 880, 440
 local SLIDE_SECS = 0.35
@@ -204,13 +204,44 @@ function Pinky.ReadRoster()
             }
         end
     end
+    Pinky.SortRows(rows, DB().listMode and DB().sortKey or nil, DB().sortAsc ~= false)
+    Pinky.rows = rows
+    return rows
+end
+
+-- Sortieren: ohne Schluessel online zuerst, dann Rang, dann Name; mit Schluessel (Listenansicht, Klick auf die
+-- Spaltenueberschrift) nach dieser Spalte auf- oder absteigend, bei Gleichstand nach Name
+local SORT_VAL = {
+    name = function(e) return e.name:lower() end,
+    level = function(e) return e.level end,
+    className = function(e) return e.className:lower() end,
+    rank = function(e) return e.rankIndex end,
+    zone = function(e) return e.zone:lower() end,
+}
+function Pinky.SortRows(rows, key, asc)
+    local get = key and SORT_VAL[key]
     table.sort(rows, function(a, b)
+        if get then
+            local va, vb = get(a), get(b)
+            if va ~= vb then
+                if asc then return va < vb end
+                return va > vb
+            end
+            return a.name < b.name
+        end
         if a.online ~= b.online then return a.online end
         if a.rankIndex ~= b.rankIndex then return a.rankIndex < b.rankIndex end
         return a.name < b.name
     end)
-    Pinky.rows = rows
     return rows
+end
+
+-- Klick auf eine Spaltenueberschrift: gleiche Spalte dreht die Richtung, neue Spalte beginnt aufsteigend
+function Pinky.SetSort(key)
+    local db = DB()
+    if db.sortKey == key then db.sortAsc = not (db.sortAsc ~= false) else db.sortKey, db.sortAsc = key, true end
+    Pinky.offset = 0
+    Pinky.Refresh()
 end
 
 local lastReq = -100
@@ -283,6 +314,12 @@ local function Build()
     Pinky.BuildRoster()
     Pinky.BuildList()
     Pinky.BuildCard()
+    -- Trenner (Rohr) zwischen Roster und Detailkarte
+    local sep = Tex(f, "pf_separator_v", "ARTWORK")
+    local _, _, _, _, sw = D.Box("pf_separator_v")
+    sep:SetSize(sw * 0.6, IN_B - IN_T + 8)
+    sep:SetPoint("TOP", f, "TOPLEFT", SEP_X, -(IN_T - 4))
+    f.sep = sep
     Pinky.BuildSlide()
 
     f:SetScript("OnShow", function()
@@ -392,7 +429,10 @@ function Pinky.BuildRoster()
     f.roster:SetFrameLevel(f:GetFrameLevel() + 2)
     -- Schienen hinter den Schildern
     local _, _, _, _, rw, rh = D.Box("pf_rail_left")
-    local railH = IN_B - IN_T - 44
+    -- Schienen: von der inneren Rahmenkante oben bis an die Scroll-Knoepfe unten
+    local _, _, _, _, _, arrowH = D.Box("pf_scroll_down")
+    local railTop = IN_T - 4
+    local railH = (IN_B - 4 - arrowH + 4) - railTop
     local rs = railH / rh
     local _, _, _, _, pw = D.Box("pf_row_normal")
     local plateW = pw * Pinky.ROW_SCALE
@@ -401,7 +441,8 @@ function Pinky.BuildRoster()
         local t = Tex(f.roster, name, "BACKGROUND", rs)
         t:SetWidth(rw * 0.9)
         local x = plateX + plateW * (k == 1 and 0.3 or 0.7) - rw * 0.45
-        t:SetPoint("TOPLEFT", f, "TOPLEFT", x, -(IN_T + 4))
+        t:SetPoint("TOPLEFT", f, "TOPLEFT", x, -railTop)
+        t:SetHeight(railH)
         f.roster["rail" .. k] = t
     end
     -- Scroll-Pfeile unten (runter links, hoch rechts wie im Entwurf)
@@ -520,7 +561,8 @@ end
 local lines = {}
 local COLS = { { "name", 0.36, "LEFT", "colName" }, { "level", 0.1, "CENTER", "colLevel" },
     { "className", 0.18, "LEFT", "colClass" }, { "rank", 0.18, "LEFT", "colRank" }, { "zone", 0.18, "LEFT", "colZone" } }
-local LIST_L, LIST_R = ROSTER_L - 6, ROSTER_R + 4
+local LIST_L, LIST_R = ROSTER_L - 6, ROSTER_R - 8
+local SEP_X = 598   -- senkrechter Trenner zwischen Roster und Detailkarte (Mitte)
 local LIST_T = IN_T + 22   -- Kopfzeile unterhalb der inneren Rahmenkante
 
 function Pinky.ListCount()
@@ -548,11 +590,26 @@ function Pinky.BuildList()
     line:SetPoint("TOPLEFT", head, "BOTTOMLEFT", 0, 0)
     line:SetSize(width, 1)
     local x = 6
+    lf.heads = {}
     for _, c in ipairs(COLS) do
-        local fs = Font(lf, 12, 1, 0.9, 0.65, c[3])
-        fs:SetPoint("LEFT", head, "LEFT", x, 0)
-        fs:SetWidth(width * c[2] - 6)
+        local hb = G.CreateFrame("Button", nil, lf)
+        hb:SetSize(width * c[2], 22)
+        hb:SetPoint("TOPLEFT", f, "TOPLEFT", LIST_L + x - 6, -LIST_T)
+        local fs = Font(hb, 12, 1, 0.9, 0.65, c[3])
+        fs:SetPoint("LEFT", hb, "LEFT", 6, 0)
+        fs:SetWidth(width * c[2] - 18)
         fs:SetText(L[c[4]])
+        hb.fs = fs
+        -- Richtungspfeil aus den Scroll-Pfeilen (klein)
+        hb.arrow = hb:CreateTexture(nil, "OVERLAY")
+        hb.arrow:SetSize(14, 6)
+        hb.arrow:SetPoint("RIGHT", hb, "RIGHT", -2, 0)
+        hb.arrow:Hide()
+        hb.key = c[1]
+        hb:SetScript("OnEnter", function(self) self.fs:SetTextColor(1, 1, 1) end)
+        hb:SetScript("OnLeave", function(self) Pinky.UpdateHeads() end)
+        hb:SetScript("OnClick", function(self) Pinky.SetSort(self.key) end)
+        lf.heads[#lf.heads + 1] = hb
         x = x + width * c[2]
     end
     lf.head = head
@@ -599,7 +656,25 @@ local function Line(i)
     return r
 end
 
+function Pinky.UpdateHeads()
+    if not (f and f.list and f.list.heads) then return end
+    local key, asc = DB().sortKey, DB().sortAsc ~= false
+    for _, hb in ipairs(f.list.heads) do
+        if hb.key == key then
+            local name = asc and "pf_scroll_up" or "pf_scroll_down"
+            hb.arrow:SetTexture(D.Tex(name))
+            TC(hb.arrow, name)
+            hb.arrow:Show()
+            hb.fs:SetTextColor(1, 0.95, 0.75)
+        else
+            hb.arrow:Hide()
+            hb.fs:SetTextColor(1, 0.9, 0.65)
+        end
+    end
+end
+
 function Pinky.RefreshList()
+    Pinky.UpdateHeads()
     local show = DB().listMode
     if show then f.list:Show() else f.list:Hide() return end
     local n = Pinky.ListCount()

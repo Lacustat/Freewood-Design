@@ -115,8 +115,23 @@ eq(FreewoodDesignDB.pinky.listMode, true, "Listenansicht gemerkt")
 eq(f.list:IsShown(), true, "Liste an")
 eq(f.roster:IsShown(), false, "Schilder und Schienen weg")
 eq(f.list.count.text, "3 / 5 online", "Zaehler")
+-- Sortieren per Klick auf die Spaltenueberschrift
+local heads = f.list.heads
+eq(#heads, 5, "fuenf Spalten")
+heads[2].scripts.OnClick(heads[2])   -- Stufe
+eq(FreewoodDesignDB.pinky.sortKey, "level", "nach Stufe")
+eq(P.rows[1].level, 8, "aufsteigend: kleinste Stufe zuerst")
+eq(heads[2].arrow.shown, true, "Pfeil an der Spalte")
+heads[2].scripts.OnClick(heads[2])
+eq(P.rows[1].level, 60, "zweiter Klick: absteigend")
+heads[1].scripts.OnClick(heads[1])   -- Name
+eq(P.rows[1].name, "Anna Bell", "nach Name aufsteigend")
+eq(heads[2].arrow.shown, false, "Pfeil gewechselt")
+heads[4].scripts.OnClick(heads[4])   -- Rang
+eq(P.rows[1].rankIndex, 0, "nach Rang: Ober-Affe zuerst")
 f.lever.scripts.OnClick(f.lever)
 eq(f.roster:IsShown(), true, "zurueck zum Roster")
+eq(P.rows[1].name, "Pinky Freewood", "Roster bleibt: online, Rang, Name")
 
 -- 6. Slideout: Knopf am Rahmen verschwindet, Fenster faehrt heraus, zurueck
 local slide = P.slide
@@ -148,6 +163,7 @@ eq(P.FontFactor(1.5), 1, "gross: Schrift normal")
 eq(P.FontFactor(0.9), 1, "90 %: normal")
 eq(math.abs(P.FontFactor(0.5) - 1.8) < 1e-9, true, "50 %: Schrift ausgeglichen")
 eq(f.slideBtn ~= nil, true, "Knopf da")
+eq(f.sep ~= nil, true, "Trenner zwischen Roster und Karte")
 
 -- 8. Ohne Gilde
 _G.IsInGuild = function() return false end
