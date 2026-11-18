@@ -36,6 +36,8 @@ local SLIDE_SECS = 0.35
 Pinky.ROW_SCALE = 0.74
 Pinky.ROW_GAP = 6
 Pinky.LIST_ROW_H = 18
+Pinky.CARD_PROF, Pinky.CARD_PROF_SMALL = 62, 40   -- Berufs-Icons auf der Karte (ohne / mit Offiziersnotiz)
+Pinky.DISC_SIZE = 0.5        -- Stufen-Scheibe auf dem Schild: Anteil der Schildhoehe
 Pinky.PROF_SIZE = 0.36       -- Berufs-Icons auf dem Schild: Anteil der Schildhoehe
 Pinky.PROF_INSET = 30       -- Berufs-Icons: Abstand vom rechten Rand des Schildes (vor der Zierleiste)
 Pinky.FONT_MIN_SCALE = 0.9  -- Schrift wird nicht kleiner als bei 90 %
@@ -456,16 +458,15 @@ local function Plate(i)
     p.bg.pfName = "pf_row_normal"
     -- Stufen-Knopf links: Porträtring mit Glasscheibe in Klassenfarbe und der Stufe (seit 0.2.9)
     local ks = ph * s * 0.92
-    p.ring = Tex(p, "pf_portrait_frame", "ARTWORK", 1, 2)
-    p.ring:SetSize(ks, ks)
-    p.ring:SetPoint("LEFT", p, "LEFT", -ph * s * 0.18, 0)
+    -- Glasscheibe ohne Ring, ganz im Schild (seit 0.2.10)
+    local ds = ph * s * Pinky.DISC_SIZE
     p.disc = Tex(p, "pf_disc", "ARTWORK", 1, 1)
-    p.disc:SetSize(ks * 0.82, ks * 0.82)
-    p.disc:SetPoint("CENTER", p.ring, "CENTER", 0, 0)
-    p.lvl = Font(p, 17, 1, 1, 1, nil, "OUTLINE")   -- Umriss: lesbar auch auf hellem Glas (Schurke, Priester)
-    p.lvl:SetPoint("CENTER", p.ring, "CENTER", 0, 0)
+    p.disc:SetSize(ds, ds)
+    p.disc:SetPoint("LEFT", p, "LEFT", ph * s * 0.16, 0)
+    p.lvl = Font(p, 14, 1, 1, 1, nil, "OUTLINE")   -- Umriss: lesbar auch auf hellem Glas (Schurke, Priester)
+    p.lvl:SetPoint("CENTER", p.disc, "CENTER", 0, 0)
     p.name = Font(p, 15, 0.45, 0.9, 0.3)
-    p.name:SetPoint("LEFT", p, "LEFT", ph * s * 0.85, 0)
+    p.name:SetPoint("LEFT", p.disc, "RIGHT", 6, 0)
     p.name:SetPoint("RIGHT", p, "RIGHT", -Pinky.PROF_INSET, 0)
     p.name:SetHeight(ph * s * 0.8)
     p.name:SetWordWrap(true)                 -- lange Namen in zwei Zeilen statt "..."
@@ -801,12 +802,12 @@ function Pinky.BuildCard()
     c.name:SetWordWrap(true)
     -- Klassen-Icon und Stufe nebeneinander
     c.class = c:CreateTexture(nil, "OVERLAY")
-    c.class:SetSize(50, 50)
-    c.class:SetPoint("TOPRIGHT", c.name, "BOTTOM", -2, -4)
-    c.level = Font(c, 30, 1, 1, 1, "LEFT")
-    c.level:SetPoint("LEFT", c.class, "RIGHT", 8, 0)
+    c.class:SetSize(62, 62)
+    c.class:SetPoint("TOP", c.name, "BOTTOM", 0, -3)
+    c.level = Font(c, 26, 1, 1, 1)
+    c.level:SetPoint("TOP", c.class, "BOTTOM", 0, -1)
     c.rank = Font(c, 11, 0.45, 0.9, 0.3)
-    c.rank:SetPoint("TOP", c.name, "BOTTOM", 0, -58)
+    c.rank:SetPoint("TOP", c.level, "BOTTOM", 0, -1)
     c.rank:SetWidth(w)
     c.zone = Font(c, 10, 0.8, 0.75, 0.65)
     c.zone:SetWidth(w)
@@ -834,8 +835,8 @@ function Pinky.BuildCard()
     c.onote.box:SetPoint("TOP", c.note.box, "BOTTOM", 0, -6)
     c.prof1 = c:CreateTexture(nil, "OVERLAY")
     c.prof2 = c:CreateTexture(nil, "OVERLAY")
-    c.prof1:SetSize(50, 50)
-    c.prof2:SetSize(50, 50)
+    c.prof1:SetSize(Pinky.CARD_PROF, Pinky.CARD_PROF)
+    c.prof2:SetSize(Pinky.CARD_PROF, Pinky.CARD_PROF)
     c.prof1:SetPoint("BOTTOMRIGHT", f, "TOPLEFT", L0 + w / 2 - 4, -(CARD_Y + b[4] - 10))
     c.prof2:SetPoint("BOTTOMLEFT", f, "TOPLEFT", L0 + w / 2 + 4, -(CARD_Y + b[4] - 10))
 end
@@ -843,7 +844,7 @@ end
 local function FieldHeight(fd, text)
     fd.txt:SetText(text ~= "" and text or "-")
     local h = (fd.txt.GetStringHeight and fd.txt:GetStringHeight() or 12) + 20
-    fd.box:SetHeight(math.max(30, math.min(40, h)))
+    fd.box:SetHeight(math.max(28, math.min(fd.maxH or 40, h)))
 end
 
 function Pinky.Select(full)
@@ -876,8 +877,14 @@ function Pinky.RefreshCard()
         local on = k == 1 or officer
         for _, p in ipairs({ fd.box, fd.edge, fd.lab, fd.txt }) do if on then p:Show() else p:Hide() end end
     end
+    -- Mit Offiziersnotiz wird es eng: Felder flacher, Berufe etwas kleiner
+    c.note.maxH = officer and 28 or 36
+    c.onote.maxH = 26
     FieldHeight(c.note, e.note)
     if officer then FieldHeight(c.onote, e.onote) end
+    local ps = officer and Pinky.CARD_PROF_SMALL or Pinky.CARD_PROF
+    c.prof1:SetSize(ps, ps)
+    c.prof2:SetSize(ps, ps)
     Pinky.SetCraft(c.prof1, e.prof1)
     Pinky.SetCraft(c.prof2, e.prof2)
 end
