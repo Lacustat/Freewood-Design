@@ -181,14 +181,21 @@ eq(tipLines[#tipLines]:find("165", 1, true) ~= nil or tipLines[#tipLines]:find("
 -- 7. Befehle
 SlashCmdList.FWPINKY("groesse 80")
 eq(FreewoodDesignDB.pinky.scale, nil, "Groesse nicht aenderbar")
-eq(P.SCALE, 1.5, "fest 150 %")
+-- Groesse unabhaengig von der UI-Skalierung: bei 65 % -> 150 %, bei 100 % -> 97,5 %, bei 130 % -> 75 %
+local eff = 0.65
+_G.UIParent.GetEffectiveScale = function() return eff end
+eq(math.abs(P.FrameScale() - 1.5) < 1e-9, true, "UI 65 %: Fenster 150 %")
+eff = 1
+eq(math.abs(P.FrameScale() - 0.975) < 1e-9, true, "UI 100 %: kleiner")
+eff = 1.3
+eq(math.abs(P.FrameScale() - 0.75) < 1e-9, true, "UI 130 %: noch kleiner")
 SlashCmdList.FWPINKY("reset")
 eq(FreewoodDesignDB.pinky.pos, nil, "Position zurueck")
 
 -- Mindestgroesse der Schrift
 eq(P.FontFactor(1.5), 1, "gross: Schrift normal")
 eq(P.FontFactor(0.9), 1, "90 %: normal")
-eq(math.abs(P.FontFactor(0.5) - 1.8) < 1e-9, true, "50 %: Schrift ausgeglichen")
+eq(P.FontFactor(0.5), 1, "kein Schriftausgleich mehr (Groesse fest)")
 eq(f.slideBtn ~= nil, true, "Knopf da")
 eq(f.sep ~= nil, true, "Trenner zwischen Roster und Karte")
 

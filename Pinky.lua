@@ -37,11 +37,14 @@ Pinky.ROW_SCALE = 0.74
 Pinky.ROW_GAP = 6
 Pinky.LIST_ROW_H = 18
 Pinky.CARD_PROF, Pinky.CARD_PROF_SMALL = 62, 40   -- Berufs-Icons auf der Karte (ohne / mit Offiziersnotiz)
-Pinky.SCALE = 1.5           -- Groesse fest 150 % (Lacustat, 18.11.: auf Full HD passend)
+-- Groesse fest im Design, unabhaengig von der UI-Skalierung des Spiels (seit 0.2.13): Lacustats Wahl war 150 % bei
+-- UI-Skalierung 65 % -> wirksamer Massstab 0,975. Das Fenster bekommt Pinky.SCALE_EFF / Skalierung des UIParent,
+-- wird also kleiner, wenn jemand die UI-Skalierung hochdreht, und groesser, wenn er sie senkt.
+Pinky.SCALE_EFF = 1.5 * 0.65
 Pinky.DISC_SIZE = 0.42        -- Stufen-Scheibe auf dem Schild: Anteil der Schildhoehe
 Pinky.PROF_SIZE = 0.36       -- Berufs-Icons auf dem Schild: Anteil der Schildhoehe
 Pinky.PROF_INSET = 30       -- Berufs-Icons: Abstand vom rechten Rand des Schildes (vor der Zierleiste)
-Pinky.FONT_MIN_SCALE = 0.9  -- Schrift wird nicht kleiner als bei 90 %
+Pinky.FONT_MIN_SCALE = 0    -- aus: die Groesse auf dem Bildschirm ist fest (seit 0.2.13), Schrift braucht keinen Ausgleich
 
 local L = {
     title = "Pinky Freewood",
@@ -424,6 +427,7 @@ local function Build()
     Pinky.BuildSlide()
 
     f:SetScript("OnShow", function()
+        Pinky.ApplyScale()
         Pinky.RequestRoster()
         Pinky.Refresh()
     end)
@@ -442,8 +446,14 @@ function Pinky.FontFactor(s)
     return Pinky.FONT_MIN_SCALE / s
 end
 
+function Pinky.FrameScale()
+    local eff = G.UIParent and G.UIParent.GetEffectiveScale and G.UIParent:GetEffectiveScale() or 1
+    if not eff or eff <= 0 then eff = 1 end
+    return math.max(0.4, math.min(4, Pinky.SCALE_EFF / eff))
+end
+
 function Pinky.ApplyScale()
-    local s = Pinky.SCALE   -- fest im Design (seit 0.2.12), nicht aenderbar
+    local s = Pinky.FrameScale()
     if f then f:SetScale(s) end
     if slide then slide:SetScale(s) end
     fontScale = Pinky.FontFactor(s)
@@ -1041,8 +1051,14 @@ end
 local ev = G.CreateFrame("Frame")
 ev:RegisterEvent("GUILD_ROSTER_UPDATE")
 ev:RegisterEvent("PLAYER_GUILD_UPDATE")
+ev:RegisterEvent("UI_SCALE_CHANGED")
+ev:RegisterEvent("DISPLAY_SIZE_CHANGED")
 local pending = false
-ev:SetScript("OnEvent", function()
+ev:SetScript("OnEvent", function(_, event)
+    if event == "UI_SCALE_CHANGED" or event == "DISPLAY_SIZE_CHANGED" then
+        if f then Pinky.ApplyScale() end
+        return
+    end
     if not f or not f:IsShown() or pending then return end
     pending = true
     local function Go() pending = false Pinky.Refresh() end
