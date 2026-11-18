@@ -255,7 +255,7 @@ local function Build()
 
     -- Deko ausserhalb des Rahmens
     local pen = Tex(f, "pf_pennant", "ARTWORK")
-    At(pen, f, "pf_pennant", 936, 16)   -- haengt an der rechten oberen Ecke
+    At(pen, f, "pf_pennant", 941, 44)   -- Stange stoesst an den rechten Rahmen, Wimpel haengt aussen
     local pipe = Tex(f, "pf_pipe_bottom", "BACKGROUND", 1, -1)
     At(pipe, f, "pf_pipe_bottom", 300, 480)
     local logo = Tex(f, "pf_logo_gear", "OVERLAY", 0.95)
@@ -428,7 +428,7 @@ function Pinky.BuildRoster()
     -- Listenansicht-Hebel unten links
     local lv = G.CreateFrame("Button", nil, f)
     lv:SetSize(44, 50)
-    lv:SetPoint("BOTTOMLEFT", f, "TOPLEFT", IN_L + 48, -(IN_B - 8))
+    lv:SetPoint("BOTTOMLEFT", f, "TOPLEFT", IN_L + 88, -(IN_B + 50))   -- im unteren Rahmen, links vom Handrad
     lv:SetFrameLevel(f:GetFrameLevel() + 6)
     lv.t = lv:CreateTexture(nil, "ARTWORK")
     lv.t:SetAllPoints(lv)
@@ -521,7 +521,7 @@ local lines = {}
 local COLS = { { "name", 0.36, "LEFT", "colName" }, { "level", 0.1, "CENTER", "colLevel" },
     { "className", 0.18, "LEFT", "colClass" }, { "rank", 0.18, "LEFT", "colRank" }, { "zone", 0.18, "LEFT", "colZone" } }
 local LIST_L, LIST_R = ROSTER_L - 6, ROSTER_R + 4
-local LIST_T = IN_T + 6
+local LIST_T = IN_T + 22   -- Kopfzeile unterhalb der inneren Rahmenkante
 
 function Pinky.ListCount()
     return math.max(1, math.floor((IN_B - LIST_T - 24 - 40) / Pinky.LIST_ROW_H))
