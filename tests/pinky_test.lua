@@ -179,6 +179,32 @@ eq(tipLines[1], P.rows[1].name, "Tooltip: Name")
 eq(tipLines[2]:find("60", 1, true) ~= nil, true, "Tooltip: Stufe")
 eq(tipLines[#tipLines]:find("165", 1, true) ~= nil or tipLines[#tipLines]:find("leather", 1, true) ~= nil, true, "Tooltip: Berufe")
 
+-- Filter oben: Online (nur online / alle), Name, Stufe
+local F = f.filters
+eq(F.online ~= nil and F.name ~= nil and F.level ~= nil, true, "drei Filterknoepfe")
+F.online.scripts.OnClick(F.online)
+eq(#P.rows, 3, "nur online")
+eq(F.online.active, true, "Online-Knopf gedrueckt")
+F.name.scripts.OnClick(F.name)
+eq(P.rows[1].name, "Aroki Silberrücken", "Name A-Z")
+eq(F.name.arrow.shown, true, "Pfeil am Name-Knopf")
+F.name.scripts.OnClick(F.name)
+eq(P.rows[1].name, "Zed Zack", "Name Z-A")
+F.level.scripts.OnClick(F.level)
+eq(P.rows[1].level, 60, "Stufe: hoechste zuerst")
+eq(F.name.arrow.shown, false, "Pfeil gewechselt")
+F.level.scripts.OnClick(F.level)
+eq(P.rows[1].level, 12, "Stufe: niedrigste zuerst")
+-- Liste: Online-Filter gilt, Sortierknoepfe verschwinden, Zaehler zaehlt alle
+f.lever.scripts.OnClick(f.lever)
+eq(#P.rows, 3, "Liste auch nur online")
+eq(F.name.shown, false, "Sortierknoepfe in der Liste aus")
+eq(F.online.shown, true, "Online-Knopf in der Liste da")
+eq(f.list.count.text, "3 / 5 online", "Zaehler ueber alle")
+f.lever.scripts.OnClick(f.lever)
+F.online.scripts.OnClick(F.online)
+eq(#P.rows, 5, "wieder alle")
+
 -- 7. Befehle
 SlashCmdList.FWPINKY("groesse 80")
 eq(FreewoodDesignDB.pinky.scale, nil, "Groesse nicht aenderbar")

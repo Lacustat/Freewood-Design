@@ -56,6 +56,7 @@ local L = {
     online = "online",
     offline = "offline",
     listmode = "Listenansicht an/aus",
+    fOnline = "Online", fName = "Name", fLevel = "Stufe",
     colName = "Name", colLevel = "Stufe", colClass = "Klasse", colRank = "Rang", colZone = "Gebiet",
     slideSoon = "Hier kommen die Bereiche hin.",
     reset = "Pinky: Position zurueckgesetzt.",
@@ -68,6 +69,7 @@ if G.GetLocale and G.GetLocale() ~= "deDE" then
     L.level, L.note, L.onote, L.listmode = "Level", "Note", "Officer note", "List view on/off"
     L.colName, L.colLevel, L.colClass, L.colRank, L.colZone = "Name", "Level", "Class", "Rank", "Zone"
     L.slideSoon = "The sections go here."
+    L.fOnline, L.fName, L.fLevel = "Online", "Name", "Level"
     L.reset = "Pinky: position reset."
     L.help = "/fwpinky (window), /fwpinky symbole blizzard|kasten|pinky, /fwpinky reset"
     L.iconsSet = "Pinky: profession icons %s"
@@ -235,7 +237,22 @@ function Pinky.ReadRoster()
             }
         end
     end
-    Pinky.SortRows(rows, DB().listMode and DB().sortKey or nil, DB().sortAsc ~= false)
+    -- Zaehler vor dem Filter (fuer "online / alle")
+    local on = 0
+    for _, e in ipairs(rows) do if e.online then on = on + 1 end end
+    Pinky.total, Pinky.onlineCount = #rows, on
+    -- Filter "nur online" (Roster und Liste, seit 0.2.16)
+    if DB().onlineOnly then
+        local keep = {}
+        for _, e in ipairs(rows) do if e.online then keep[#keep + 1] = e end end
+        rows = keep
+    end
+    -- Sortierung: Liste nach Spaltenkopf, Roster nach den Knoepfen oben (Name, Stufe), sonst Standard
+    if DB().listMode then
+        Pinky.SortRows(rows, DB().sortKey, DB().sortAsc ~= false)
+    else
+        Pinky.SortRows(rows, DB().rosterSort, DB().rosterAsc ~= false)
+    end
     Pinky.rows = rows
     return rows
 end
@@ -425,6 +442,7 @@ local function Build()
     sep:SetPoint("TOP", f, "TOPLEFT", SEP_X, -(IN_T - 4))
     f.sep = sep
     Pinky.BuildSlide()
+    Pinky.BuildFilters()
 
     f:SetScript("OnShow", function()
         Pinky.ApplyScale()
@@ -816,9 +834,7 @@ function Pinky.RefreshList()
             r:Hide()
         end
     end
-    local on = 0
-    for _, e in ipairs(Pinky.rows) do if e.online then on = on + 1 end end
-    f.list.count:SetText(string.format("%d / %d %s", on, #Pinky.rows, L.online))
+    f.list.count:SetText(string.format("%d / %d %s", Pinky.onlineCount or 0, Pinky.total or #Pinky.rows, L.online))
 end
 
 ------------------------------------------------------------------------
@@ -930,6 +946,85 @@ function Pinky.RefreshCard()
 end
 
 ------------------------------------------------------------------------
+-- 6b. Filter oben im Band (seit 0.2.16): Online (nur online / alle), Name und Stufe (Roster-Sortierung)
+------------------------------------------------------------------------
+
+local FILTER_X, FILTER_Y = 344, 58     -- linke Kante und Mitte (Band oben zwischen Titel-Schild und rechtem Schild)
+local FILTER_W, FILTER_H, FILTER_GAP = 84, 28, 6
+
+-- Roster-Sortierknopf: gleiche Spalte dreht die Richtung; Name beginnt A-Z, Stufe beginnt mit der hoechsten
+function Pinky.SetRosterSort(key)
+    local db = DB()
+    if db.rosterSort == key then
+        db.rosterAsc = not (db.rosterAsc ~= false)
+    else
+        db.rosterSort, db.rosterAsc = key, key ~= "level"
+    end
+    Pinky.offset = 0
+    Pinky.Refresh()
+end
+
+function Pinky.ToggleOnline()
+    DB().onlineOnly = not DB().onlineOnly
+    Pinky.offset = 0
+    Pinky.Refresh()
+end
+
+function Pinky.BuildFilters()
+    f.filters = {}
+    local defs = {
+        { key = "online", label = L.fOnline, click = function() Pinky.ToggleOnline() end },
+        { key = "name", label = L.fName, click = function() Pinky.SetRosterSort("name") end, sort = true },
+        { key = "level", label = L.fLevel, click = function() Pinky.SetRosterSort("level") end, sort = true },
+    }
+    for i, d in ipairs(defs) do
+        local b = G.CreateFrame("Button", nil, f)
+        b:SetSize(FILTER_W, FILTER_H)
+        b:SetPoint("LEFT", f, "TOPLEFT", FILTER_X + (i - 1) * (FILTER_W + FILTER_GAP), -FILTER_Y)
+        b:SetFrameLevel(f:GetFrameLevel() + 6)
+        b.st = States(b, { "pf_button_normal", "pf_button_hover", "pf_button_pushed" })
+        b.fs = Font(b, 12, 0.24, 0.12, 0.04)   -- dunkle Schrift auf dem hellen Messingknopf
+        b.fs:SetPoint("CENTER", b, "CENTER", d.sort and -5 or 0, 1)
+        b.fs:SetText(d.label)
+        if d.sort then
+            b.arrow = G.CreateFrame("Frame", nil, b)
+            b.arrow:SetSize(12, 5)
+            b.arrow:SetPoint("LEFT", b.fs, "RIGHT", 4, 0)
+            b.arrow.st = States(b.arrow, { "pf_scroll_up", "pf_scroll_down" }, "OVERLAY")
+            b.arrow:Hide()
+        end
+        b.key, b.isSort = d.key, d.sort
+        b:SetScript("OnEnter", function(self) if not self.active then self.st:Set("pf_button_hover") end end)
+        b:SetScript("OnLeave", function(self) Pinky.RefreshFilters() end)
+        b:SetScript("OnMouseDown", function(self) self.st:Set("pf_button_pushed") end)
+        b:SetScript("OnClick", d.click)
+        f.filters[d.key] = b
+    end
+end
+
+function Pinky.RefreshFilters()
+    if not (f and f.filters) then return end
+    local db = DB()
+    for key, b in pairs(f.filters) do
+        if b.isSort then
+            -- Sortierknoepfe nur im Roster (die Liste sortiert ueber die Spaltenkoepfe)
+            if db.listMode then b:Hide() else b:Show() end
+            b.active = db.rosterSort == key
+            if b.active then
+                b.arrow.st:Set((db.rosterAsc ~= false) and "pf_scroll_up" or "pf_scroll_down")
+                b.arrow:Show()
+            else
+                b.arrow:Hide()
+            end
+        else
+            b.active = db.onlineOnly and true or false
+        end
+        b.st:Set(b.active and "pf_button_pushed" or "pf_button_normal")
+        if b.active then b.fs:SetTextColor(0.1, 0.04, 0) else b.fs:SetTextColor(0.24, 0.12, 0.04) end
+    end
+end
+
+------------------------------------------------------------------------
 -- 7. Slideout
 ------------------------------------------------------------------------
 
@@ -1030,6 +1125,7 @@ function Pinky.Refresh()
     SetArrow(f.down, Pinky.offset < maxOff)
     Pinky.RefreshRoster()
     Pinky.RefreshList()
+    Pinky.RefreshFilters()
     Pinky.RefreshCard()
     if #Pinky.rows == 0 then
         f.status:SetText((G.IsInGuild and G.IsInGuild()) and L.loading or L.noGuild)
