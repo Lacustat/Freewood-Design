@@ -13,7 +13,7 @@
 local D = _G.FreewoodDesign or {}
 _G.FreewoodDesign = D
 
-D.VERSION = "0.2.5"
+D.VERSION = "0.2.6"
 D.ROOT = "Interface\\AddOns\\Freewood-Design\\Media\\"
 
 ------------------------------------------------------------------------

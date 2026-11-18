@@ -53,7 +53,8 @@ local L = {
     slideSoon = "Hier kommen die Bereiche hin.",
     scaleSet = "Pinky: Groesse %d %%",
     reset = "Pinky: Position zurueckgesetzt.",
-    help = "/fwpinky (Fenster), /fwpinky groesse 50-150, /fwpinky reset",
+    help = "/fwpinky (Fenster), /fwpinky groesse 50-150, /fwpinky symbole blizzard|pinky, /fwpinky reset",
+    iconsSet = "Pinky: Berufs-Symbole %s",
 }
 if G.GetLocale and G.GetLocale() ~= "deDE" then
     L.noGuild = "You are not in a guild."
@@ -62,7 +63,8 @@ if G.GetLocale and G.GetLocale() ~= "deDE" then
     L.colName, L.colLevel, L.colClass, L.colRank, L.colZone = "Name", "Level", "Class", "Rank", "Zone"
     L.slideSoon = "The sections go here."
     L.scaleSet, L.reset = "Pinky: size %d %%", "Pinky: position reset."
-    L.help = "/fwpinky (window), /fwpinky groesse 50-150, /fwpinky reset"
+    L.help = "/fwpinky (window), /fwpinky groesse 50-150, /fwpinky symbole blizzard|pinky, /fwpinky reset"
+    L.iconsSet = "Pinky: profession icons %s"
 end
 Pinky.L = L
 
@@ -243,6 +245,43 @@ function Pinky.SetSort(key)
     if db.sortKey == key then db.sortAsc = not (db.sortAsc ~= false) else db.sortKey, db.sortAsc = key, true end
     Pinky.offset = 0
     Pinky.Refresh()
+end
+
+-- Berufs-Symbole: "blizzard" (Spiel-Icons, rund maskiert, besser erkennbar bei kleiner Groesse) oder "pinky"
+-- (eigene Bilder aus Freewood-Design). Einstellung DB().craftIcons, Standard "blizzard" (Test seit 0.2.6).
+Pinky.BLIZZ_CRAFT = {
+    [171] = "Interface\\Icons\\Trade_Alchemy", [164] = "Interface\\Icons\\Trade_BlackSmithing",
+    [333] = "Interface\\Icons\\Trade_Engraving", [202] = "Interface\\Icons\\Trade_Engineering",
+    [165] = "Interface\\Icons\\INV_Misc_ArmorKit_17", [197] = "Interface\\Icons\\Trade_Tailoring",
+    [182] = "Interface\\Icons\\Spell_Nature_NatureTouchGrow", [186] = "Interface\\Icons\\Trade_Mining",
+    [393] = "Interface\\Icons\\INV_Misc_Pelt_Wolf_01", [185] = "Interface\\Icons\\INV_Misc_Food_15",
+    [129] = "Interface\\Icons\\Spell_Holy_SealOfSacrifice", [356] = "Interface\\Icons\\Trade_Fishing",
+    [755] = "Interface\\Icons\\INV_Misc_Gem_01", [773] = "Interface\\Icons\\INV_Inscription_Tradeskill01",
+}
+Pinky.ROUND_MASK = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
+
+function Pinky.CraftStyle()
+    return DB().craftIcons == "pinky" and "pinky" or "blizzard"
+end
+
+-- Berufs-Symbol in eine Textur setzen; Rueckgabe true, wenn es eines gibt
+function Pinky.SetCraft(t, id)
+    local path
+    if Pinky.CraftStyle() == "blizzard" then path = Pinky.BLIZZ_CRAFT[tonumber(id) or 0] end
+    local blizz = path ~= nil
+    path = path or D.CraftBySkill(id)
+    t:SetTexture(path)
+    if blizz then
+        t:SetTexCoord(0.07, 0.93, 0.07, 0.93)   -- Rand der Spiel-Icons weg
+        if t.SetMask and not t.pfMasked then
+            if pcall(t.SetMask, t, Pinky.ROUND_MASK) then t.pfMasked = true end
+        end
+    else
+        t:SetTexCoord(0, 1, 0, 1)
+        if t.pfMasked and t.SetMask then pcall(t.SetMask, t, "") t.pfMasked = nil end
+    end
+    if path then t:Show() else t:Hide() end
+    return path ~= nil
 end
 
 local lastReq = -100
@@ -539,11 +578,8 @@ function Pinky.RefreshRoster()
             if e.online then p.name:SetTextColor(0.45, 0.9, 0.3) else p.name:SetTextColor(0.6, 0.6, 0.58) end
             p.class:SetTexture(D.ClassTex(e.class) or "Interface\\Icons\\INV_Misc_QuestionMark")
             p.class:SetDesaturated(not e.online)
-            local t1, t2 = D.CraftBySkill(e.prof1), D.CraftBySkill(e.prof2)
-            p.prof1:SetTexture(t1)
-            p.prof2:SetTexture(t2)
-            if t1 then p.prof1:Show() else p.prof1:Hide() end
-            if t2 then p.prof2:Show() else p.prof2:Hide() end
+            Pinky.SetCraft(p.prof1, e.prof1)
+            Pinky.SetCraft(p.prof2, e.prof2)
             Swap(p.lamp, e.online and "pf_lamp_on" or "pf_lamp_off")
             Swap(p.bg, Pinky.selected == e.full and "pf_row_selected" or "pf_row_normal")
             p:Show()
@@ -753,8 +789,8 @@ function Pinky.BuildCard()
     c.onote.box:SetPoint("TOP", c.note.box, "BOTTOM", 0, -6)
     c.prof1 = c:CreateTexture(nil, "OVERLAY")
     c.prof2 = c:CreateTexture(nil, "OVERLAY")
-    c.prof1:SetSize(36, 36)
-    c.prof2:SetSize(36, 36)
+    c.prof1:SetSize(44, 44)
+    c.prof2:SetSize(44, 44)
     c.prof1:SetPoint("BOTTOMRIGHT", f, "TOPLEFT", L0 + w / 2 - 4, -(CARD_Y + b[4] - 10))
     c.prof2:SetPoint("BOTTOMLEFT", f, "TOPLEFT", L0 + w / 2 + 4, -(CARD_Y + b[4] - 10))
 end
@@ -795,11 +831,8 @@ function Pinky.RefreshCard()
     end
     FieldHeight(c.note, e.note)
     if officer then FieldHeight(c.onote, e.onote) end
-    local t1, t2 = D.CraftBySkill(e.prof1), D.CraftBySkill(e.prof2)
-    c.prof1:SetTexture(t1)
-    c.prof2:SetTexture(t2)
-    if t1 then c.prof1:Show() else c.prof1:Hide() end
-    if t2 then c.prof2:Show() else c.prof2:Hide() end
+    Pinky.SetCraft(c.prof1, e.prof1)
+    Pinky.SetCraft(c.prof2, e.prof2)
 end
 
 ------------------------------------------------------------------------
@@ -950,6 +983,10 @@ G.SlashCmdList["FWPINKY"] = function(msg)
         else
             Say(L.help)
         end
+    elseif cmd == "icons" or cmd == "symbole" then
+        DB().craftIcons = (arg == "pinky") and "pinky" or "blizzard"
+        Say(string.format(L.iconsSet, DB().craftIcons))
+        if f then Pinky.Refresh() end
     elseif cmd == "reset" then
         DB().pos = nil
         if f then Pinky.ApplyPos() end

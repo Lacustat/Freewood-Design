@@ -152,6 +152,15 @@ P.SetSlide(true)
 f.scripts.OnHide(f)
 eq(slide:IsShown(), false, "mit dem Fenster zu")
 
+-- Berufs-Symbole: Standard Spiel-Icons, umschaltbar
+eq(P.CraftStyle(), "blizzard", "Standard Spiel-Icons")
+P.Select("Pinky Freewood-Realm")
+eq(f.card.prof1.tex, "Interface\\Icons\\INV_Misc_ArmorKit_17", "Lederverarbeitung als Spiel-Icon")
+SlashCmdList.FWPINKY("symbole pinky")
+eq(f.card.prof1.tex, FreewoodDesign.CraftTex("leatherworking"), "eigenes Bild")
+SlashCmdList.FWPINKY("symbole blizzard")
+eq(P.CraftStyle(), "blizzard", "zurueck")
+
 -- 7. Befehle
 SlashCmdList.FWPINKY("groesse 300")
 eq(FreewoodDesignDB.pinky.scale, 150, "Groesse begrenzt")
