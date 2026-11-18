@@ -30,11 +30,13 @@ local IN_L, IN_T, IN_R, IN_B = 165, 105, 855, 415
 local ROSTER_L, ROSTER_R = 178, 590
 local CARD_X, CARD_Y = 592, 4          -- linke obere Ecke der Kartentextur (256 x 512)
 local SLIDE_BTN_X = 936                 -- Ausklapp-Knopf (64 x 512) am rechten Rand
-local SLIDE_OPEN_X, SLIDE_CLOSED_X = 908, 458
+local SLIDE_OPEN_X, SLIDE_CLOSED_X = 880, 440
 local SLIDE_SECS = 0.35
 Pinky.ROW_SCALE = 0.74
 Pinky.ROW_GAP = 6
 Pinky.LIST_ROW_H = 18
+Pinky.PROF_INSET = 30       -- Berufs-Icons: Abstand vom rechten Rand des Schildes (vor der Zierleiste)
+Pinky.FONT_MIN_SCALE = 0.9  -- Schrift wird nicht kleiner als bei 90 %
 
 local L = {
     title = "Pinky Freewood",
@@ -116,9 +118,12 @@ local function At(t, parent, name, x, y, scale)
     t:SetPoint("TOPLEFT", parent, "TOPLEFT", x + b[1] * scale, -(y + b[2] * scale))
 end
 
+local fonts = {}   -- alle Schriften mit ihrer Grundgroesse (fuer die Mindestgroesse)
+local fontScale = 1
 local function Font(parent, size, r, g, b, justify)
     local fs = parent:CreateFontString(nil, "OVERLAY")
-    fs:SetFont(FONT, size, "")
+    fs:SetFont(FONT, size * fontScale, "")
+    fonts[#fonts + 1] = { fs, size }
     fs:SetTextColor(r or 1, g or 1, b or 1)
     fs:SetJustifyH(justify or "CENTER")
     if fs.SetShadowOffset then fs:SetShadowOffset(1, -1) fs:SetShadowColor(0, 0, 0, 0.8) end
@@ -263,8 +268,8 @@ local function Build()
 
     -- Schliessen im Loch oben rechts (Mitte etwa 925, 52)
     local close = G.CreateFrame("Button", nil, f)
-    close:SetSize(48, 48)
-    close:SetPoint("CENTER", f, "TOPLEFT", 925, -52)
+    close:SetSize(46, 46)
+    close:SetPoint("CENTER", f, "TOPLEFT", 921, -51)   -- Mitte des Lochs (gemessen)
     local ct = close:CreateTexture(nil, "ARTWORK")
     ct:SetAllPoints(close)
     ct:SetTexture(D.Tex("pf_close_normal"))
@@ -293,10 +298,19 @@ local function Build()
     Pinky.frame = f
 end
 
+-- Faktor fuer die Schrift: unter 90 % gleicht er die Verkleinerung aus, damit der Text lesbar bleibt
+function Pinky.FontFactor(s)
+    if s >= Pinky.FONT_MIN_SCALE then return 1 end
+    return Pinky.FONT_MIN_SCALE / s
+end
+
 function Pinky.ApplyScale()
     local s = (tonumber(DB().scale) or 90) / 100
     if f then f:SetScale(s) end
     if slide then slide:SetScale(s) end
+    fontScale = Pinky.FontFactor(s)
+    for _, e in ipairs(fonts) do e[1]:SetFont(FONT, e[2] * fontScale, "") end
+    if f and f:IsShown() then Pinky.Refresh() end
 end
 
 function Pinky.ApplyPos()
@@ -346,14 +360,16 @@ local function Plate(i)
     -- Berufe rechts
     p.prof1 = p:CreateTexture(nil, "OVERLAY")
     p.prof1:SetSize(ph * s * 0.46, ph * s * 0.46)
-    p.prof1:SetPoint("TOPRIGHT", p, "TOPRIGHT", -12, -6)
+    p.prof1:SetPoint("TOPRIGHT", p, "TOPRIGHT", -Pinky.PROF_INSET, -6)
     p.prof2 = p:CreateTexture(nil, "OVERLAY")
     p.prof2:SetSize(ph * s * 0.46, ph * s * 0.46)
-    p.prof2:SetPoint("BOTTOMRIGHT", p, "BOTTOMRIGHT", -12, 6)
+    p.prof2:SetPoint("BOTTOMRIGHT", p, "BOTTOMRIGHT", -Pinky.PROF_INSET, 6)
     p.name = Font(p, 15, 0.45, 0.9, 0.3)
     p.name:SetPoint("LEFT", p, "LEFT", ph * s * 0.85, 0)
-    p.name:SetPoint("RIGHT", p, "RIGHT", -ph * s * 0.6, 0)
-    p.name:SetWordWrap(false)
+    p.name:SetPoint("RIGHT", p, "RIGHT", -(Pinky.PROF_INSET + ph * s * 0.46 + 4), 0)
+    p.name:SetHeight(ph * s * 0.8)
+    p.name:SetWordWrap(true)                 -- lange Namen in zwei Zeilen statt "..."
+    if p.name.SetMaxLines then p.name:SetMaxLines(2) end
     -- Lampe rechts neben dem Schild
     p.lamp = Tex(f.roster, "pf_lamp_on", "ARTWORK", 0.3)
     p.lamp:SetPoint("LEFT", p, "RIGHT", 4, 0)
@@ -625,7 +641,7 @@ function Pinky.BuildCard()
     At(t, f, "pf_card", CARD_X, CARD_Y)
     local b = D.Pinky.box.pf_card
     -- Innenflaeche der Karte (zwischen den Zierleisten): etwa x 50..206, y 120..392 des Kartenbildes
-    local L0, T0, R0 = CARD_X + 52, CARD_Y + b[2] + 10, CARD_X + 204
+    local L0, T0, R0 = CARD_X + 58, CARD_Y + b[2] + 10, CARD_X + 198
     local w = R0 - L0
     c.name = Font(c, 14, 0.45, 0.9, 0.3)
     c.name:SetPoint("TOP", f, "TOPLEFT", L0 + w / 2, -T0)

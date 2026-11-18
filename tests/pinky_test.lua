@@ -125,10 +125,10 @@ f.slideBtn.scripts.OnClick(f.slideBtn)
 eq(f.slideBtn:IsShown(), false, "Rahmen-Knopf weg (verschmolzen)")
 eq(slide:IsShown(), true, "Slideout sichtbar")
 for _ = 1, 10 do slide.scripts.OnUpdate(slide, 0.05) end
-eq(slide.x, 908, "ganz offen")
+eq(slide.x, 880, "ganz offen")
 slide.btn.scripts.OnClick(slide.btn)
 slide.scripts.OnUpdate(slide, 0.1)
-eq(slide.x > 458 and slide.x < 908, true, "faehrt zurueck: " .. tostring(slide.x))
+eq(slide.x > 440 and slide.x < 880, true, "faehrt zurueck: " .. tostring(slide.x))
 for _ = 1, 10 do slide.scripts.OnUpdate(slide, 0.05) end
 eq(slide:IsShown(), false, "zu")
 eq(f.slideBtn:IsShown(), true, "Rahmen-Knopf wieder da")
@@ -142,6 +142,12 @@ SlashCmdList.FWPINKY("groesse 300")
 eq(FreewoodDesignDB.pinky.scale, 150, "Groesse begrenzt")
 SlashCmdList.FWPINKY("reset")
 eq(FreewoodDesignDB.pinky.pos, nil, "Position zurueck")
+
+-- Mindestgroesse der Schrift
+eq(P.FontFactor(1.5), 1, "gross: Schrift normal")
+eq(P.FontFactor(0.9), 1, "90 %: normal")
+eq(math.abs(P.FontFactor(0.5) - 1.8) < 1e-9, true, "50 %: Schrift ausgeglichen")
+eq(f.slideBtn ~= nil, true, "Knopf da")
 
 -- 8. Ohne Gilde
 _G.IsInGuild = function() return false end

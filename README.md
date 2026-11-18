@@ -1,6 +1,6 @@
 # Freewood-Design
 
-**Deutsch & English · German & English.** Autor · Author: Lacustat. Version 0.2.0 · Interface 16001 (World of Warcraft: Forever).
+**Deutsch & English · German & English.** Autor · Author: Lacustat. Version 0.2.1 · Interface 16001 (World of Warcraft: Forever).
 
 ## Inhalt · Contents
 - [Deutsch](#deutsch)
@@ -56,7 +56,7 @@ icon:SetTexture(D.CraftTex("leatherworking"))
 Lacustats Vorlagen (PNG, teils 1254 x 1254) bleiben auf seinem PC (`Documents\Freewood Addon\Freewood Design`) und kommen nicht ins Repo. `tools/convert_pinky.py` macht daraus die TGAs: Zielgröße in Zweierpotenz, Verkleinern mit vormultipliziertem Alpha (keine dunklen Säume), Alpha ab 250 voll deckend, Farbe unter durchsichtigen Pixeln schwarz, TGA 32 Bit unkomprimiert, einheitliche Namen. Aufruf: `python3 tools/convert_pinky.py "<Freewood Design>" Media/Pinky`. Test: `texlua tests/media_test.lua` (jede Datei vorhanden, Zweierpotenz, 32 Bit).
 
 ### Stand
-Version 0.2.0: Probefenster `/fwpinky` (Gildenansicht, Liste, Detailkarte, Slideout). Version 0.1.0: Grafiken für das Gildenfenster und das Slideout. Alles im Spiel ungeprüft (ob alle TGAs laden, Lage der Teile). Größe zusammen etwa 20 MB. Slideout-Symbole folgen.
+Version 0.2.1: lange Namen auf den Schildern umbrechen (2 Zeilen) statt „…“, Berufs-Icons weiter innen, Schrift nicht kleiner als bei 90 % (Rahmen wird trotzdem kleiner), Slideout weiter hinter dem Rahmen (keine Lücke), Notizfeld schmaler und mittig, Schließen-X mittig im Loch. Version 0.2.0: Probefenster `/fwpinky` (Gildenansicht, Liste, Detailkarte, Slideout). Version 0.1.0: Grafiken für das Gildenfenster und das Slideout. Alles im Spiel ungeprüft (ob alle TGAs laden, Lage der Teile). Größe zusammen etwa 20 MB. Slideout-Symbole folgen.
 
 ## English
 
@@ -83,7 +83,7 @@ See the Lua block above: `FreewoodDesign.Tex(name)`, `ClassTex(token)`, `CraftTe
 Lacustat's sources (PNG, some 1254 x 1254) stay on his PC and are not in the repo. `tools/convert_pinky.py` turns them into TGAs: power-of-two target size, downscaling with premultiplied alpha (no dark fringes), alpha from 250 fully opaque, colour under transparent pixels black, 32-bit uncompressed TGA, consistent names. Test: `texlua tests/media_test.lua`.
 
 ### Status
-Version 0.2.0: probe window `/fwpinky` (guild view, list, detail card, slide-out). Version 0.1.0: graphics for the guild window and the slide-out. All unverified in game. About 20 MB in total. Slide-out symbols will follow.
+Version 0.2.1: long names on the plates wrap (2 lines) instead of "...", profession icons further in, text never smaller than at 90 % (the frame still shrinks), slide-out further behind the frame (no gap), note field narrower and centred, close X centred in the hole. Version 0.2.0: probe window `/fwpinky` (guild view, list, detail card, slide-out). Version 0.1.0: graphics for the guild window and the slide-out. All unverified in game. About 20 MB in total. Slide-out symbols will follow.
 
 ## Lizenz · License
 GPL-3.0-or-later, siehe · see `LICENSE`.
