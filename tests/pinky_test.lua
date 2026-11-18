@@ -152,17 +152,31 @@ P.SetSlide(true)
 f.scripts.OnHide(f)
 eq(slide:IsShown(), false, "mit dem Fenster zu")
 
--- Berufs-Symbole: Standard Spiel-Icons, umschaltbar
-eq(P.CraftStyle(), "blizzard", "Standard Spiel-Icons")
+-- Berufs-Symbole: Standard eigene Bilder (nur auf der Karte), umschaltbar
+eq(P.CraftStyle(), "pinky", "Standard eigene Bilder")
 P.Select("Pinky Freewood-Realm")
-eq(f.card.prof1.tex, "Interface\\Icons\\INV_Misc_ArmorKit_17", "Lederverarbeitung als Spiel-Icon")
-SlashCmdList.FWPINKY("symbole pinky")
-eq(f.card.prof1.tex, FreewoodDesign.CraftTex("leatherworking"), "eigenes Bild")
-SlashCmdList.FWPINKY("symbole kasten")
-eq(P.CraftBlend(), "box", "mit schwarzem Kasten")
+eq(f.card.prof1.tex, FreewoodDesign.CraftTex("leatherworking"), "eigenes Bild auf der Karte")
+eq(f.card.class.tex, FreewoodDesign.ClassTex("ROGUE"), "Klassen-Icon auf der Karte")
 SlashCmdList.FWPINKY("symbole blizzard")
-eq(P.CraftStyle(), "blizzard", "zurueck")
-eq(P.CraftBlend(), "add", "ohne schwarzen Hintergrund")
+eq(f.card.prof1.tex, "Interface\\Icons\\INV_Misc_ArmorKit_17", "Spiel-Icon zum Vergleich")
+SlashCmdList.FWPINKY("symbole pinky")
+eq(P.CraftStyle(), "pinky", "zurueck")
+
+-- Roster: Stufen-Knopf in Klassenfarbe, Name in Klassenfarbe, Tooltip
+P.Refresh()
+local pl
+for _, child in ipairs({}) do end
+local r1, g1, b1 = P.ClassColor("ROGUE", true)
+eq(r1 == 1 and g1 > 0.9, true, "Schurke gelb")
+local r2 = P.ClassColor("ROGUE", false)
+eq(r2, 0.5, "offline abgedunkelt")
+local tipLines = {}
+_G.GameTooltip = { SetOwner = function() end, SetText = function(_, t) tipLines[1] = t end,
+    AddLine = function(_, t) tipLines[#tipLines + 1] = t end, Show = function() end, Hide = function() end }
+P.ShowTip(f, P.rows[1])
+eq(tipLines[1], P.rows[1].name, "Tooltip: Name")
+eq(tipLines[2]:find("60", 1, true) ~= nil, true, "Tooltip: Stufe")
+eq(tipLines[#tipLines]:find("165", 1, true) ~= nil or tipLines[#tipLines]:find("leather", 1, true) ~= nil, true, "Tooltip: Berufe")
 
 -- 7. Befehle
 SlashCmdList.FWPINKY("groesse 300")

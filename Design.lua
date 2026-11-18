@@ -13,7 +13,7 @@
 local D = _G.FreewoodDesign or {}
 _G.FreewoodDesign = D
 
-D.VERSION = "0.2.8"
+D.VERSION = "0.2.9"
 D.ROOT = "Interface\\AddOns\\Freewood-Design\\Media\\"
 
 ------------------------------------------------------------------------
@@ -31,7 +31,7 @@ end
 
 D.Pinky = D.Pinky or {}
 D.Pinky.files = {
-    ui = { "pf_button_hover", "pf_button_normal", "pf_button_pushed", "pf_card", "pf_check_off", "pf_check_on", "pf_class_glow", "pf_close_hover", "pf_close_normal", "pf_close_pushed", "pf_craft_glow", "pf_divider", "pf_dropdown", "pf_edit", "pf_frame_main", "pf_frame_slide", "pf_gear_hover", "pf_gear_normal", "pf_gear_pushed", "pf_lamp_off", "pf_lamp_on", "pf_listmode_off", "pf_listmode_off_hover", "pf_listmode_on", "pf_listmode_on_hover", "pf_logo_gear", "pf_panel", "pf_pennant", "pf_pipe_bottom", "pf_portrait_frame", "pf_portrait_glow_red", "pf_portrait_glow_yellow", "pf_rail_left", "pf_rail_right", "pf_row_hover", "pf_row_normal", "pf_row_selected", "pf_scroll_down", "pf_scroll_up", "pf_scrollbar_thumb_hover", "pf_scrollbar_thumb_normal", "pf_scrollbar_track", "pf_separator_h", "pf_separator_v", "pf_slide_btn_hover", "pf_slide_btn_normal", "pf_slide_btn_pushed", "pf_tooltip_border" },
+    ui = { "pf_button_hover", "pf_button_normal", "pf_button_pushed", "pf_card", "pf_check_off", "pf_check_on", "pf_class_glow", "pf_close_hover", "pf_close_normal", "pf_close_pushed", "pf_craft_glow", "pf_disc", "pf_divider", "pf_dropdown", "pf_edit", "pf_frame_main", "pf_frame_slide", "pf_gear_hover", "pf_gear_normal", "pf_gear_pushed", "pf_lamp_off", "pf_lamp_on", "pf_listmode_off", "pf_listmode_off_hover", "pf_listmode_on", "pf_listmode_on_hover", "pf_logo_gear", "pf_panel", "pf_pennant", "pf_pipe_bottom", "pf_portrait_frame", "pf_portrait_glow_red", "pf_portrait_glow_yellow", "pf_rail_left", "pf_rail_right", "pf_row_hover", "pf_row_normal", "pf_row_selected", "pf_scroll_down", "pf_scroll_up", "pf_scrollbar_thumb_hover", "pf_scrollbar_thumb_normal", "pf_scrollbar_track", "pf_separator_h", "pf_separator_v", "pf_slide_btn_hover", "pf_slide_btn_normal", "pf_slide_btn_pushed", "pf_tooltip_border" },
     class = { "pf_class_druid", "pf_class_hunter", "pf_class_mage", "pf_class_paladin", "pf_class_pet", "pf_class_priest", "pf_class_rogue", "pf_class_shaman", "pf_class_warlock", "pf_class_warrior" },
     craft = { "pf_craft_alchemy", "pf_craft_blacksmithing", "pf_craft_cooking", "pf_craft_enchanting", "pf_craft_engineering", "pf_craft_firstaid", "pf_craft_fishing", "pf_craft_herbalism", "pf_craft_inscription", "pf_craft_jewelcrafting", "pf_craft_leatherworking", "pf_craft_mining", "pf_craft_skinning", "pf_craft_survival", "pf_craft_tailoring" },
     later = { "pf_panel_family_tree" },
@@ -86,6 +86,7 @@ D.Pinky.box = {
     pf_close_normal = { 0, 0, 64, 64, 64, 64 },
     pf_close_pushed = { 0, 0, 64, 64, 64, 64 },
     pf_craft_glow = { 0, 0, 255, 254, 256, 256 },
+    pf_disc = { 0, 0, 128, 128, 128, 128 },
     pf_divider = { 0, 7, 512, 57, 512, 64 },
     pf_dropdown = { 0, 19, 512, 109, 512, 128 },
     pf_edit = { 0, 16, 512, 113, 512, 128 },

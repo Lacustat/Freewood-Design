@@ -124,10 +124,10 @@ end
 
 local fonts = {}   -- alle Schriften mit ihrer Grundgroesse (fuer die Mindestgroesse)
 local fontScale = 1
-local function Font(parent, size, r, g, b, justify)
+local function Font(parent, size, r, g, b, justify, flags)
     local fs = parent:CreateFontString(nil, "OVERLAY")
-    fs:SetFont(FONT, size * fontScale, "")
-    fonts[#fonts + 1] = { fs, size }
+    fs:SetFont(FONT, size * fontScale, flags or "")
+    fonts[#fonts + 1] = { fs, size, flags or "" }
     fs:SetTextColor(r or 1, g or 1, b or 1)
     fs:SetJustifyH(justify or "CENTER")
     if fs.SetShadowOffset then fs:SetShadowOffset(1, -1) fs:SetShadowColor(0, 0, 0, 0.8) end
@@ -261,7 +261,32 @@ Pinky.BLIZZ_CRAFT = {
 }
 
 function Pinky.CraftStyle()
-    return DB().craftIcons == "pinky" and "pinky" or "blizzard"
+    return DB().craftIcons == "blizzard" and "blizzard" or "pinky"   -- seit 0.2.9 wieder eigene Bilder als Standard
+end
+
+-- Klassenfarben (Spiel-Tabelle, sonst die bekannten Werte); offline abgedunkelt
+local CLASS_RGB = {
+    WARRIOR = { 0.78, 0.61, 0.43 }, PALADIN = { 0.96, 0.55, 0.73 }, HUNTER = { 0.67, 0.83, 0.45 },
+    ROGUE = { 1, 0.96, 0.41 }, PRIEST = { 1, 1, 1 }, SHAMAN = { 0, 0.44, 0.87 }, MAGE = { 0.25, 0.78, 0.92 },
+    WARLOCK = { 0.53, 0.53, 0.93 }, DRUID = { 1, 0.49, 0.04 },
+}
+function Pinky.ClassColor(token, online)
+    local r, g, b = 0.8, 0.8, 0.8
+    local c = G.RAID_CLASS_COLORS and token and G.RAID_CLASS_COLORS[token]
+    if type(c) == "table" and c.r then r, g, b = c.r, c.g, c.b
+    elseif token and CLASS_RGB[token] then r, g, b = CLASS_RGB[token][1], CLASS_RGB[token][2], CLASS_RGB[token][3] end
+    if online == false then r, g, b = r * 0.5, g * 0.5, b * 0.5 end
+    return r, g, b
+end
+
+-- Berufsname fuer den Tooltip
+function Pinky.ProfName(id)
+    local FWG = G.Freewood and G.Freewood.Guild
+    if FWG and FWG.ProfName then
+        local ok, n = pcall(FWG.ProfName, id)
+        if ok and type(n) == "string" then return n end
+    end
+    return D.SKILL_CRAFT[tonumber(id) or 0] or tostring(id)
 end
 -- Schwarzer Hintergrund der Spiel-Icons: "add" (Schwarz wird durchsichtig, Farben leuchten leicht) oder "box"
 function Pinky.CraftBlend()
@@ -385,7 +410,7 @@ function Pinky.ApplyScale()
     if f then f:SetScale(s) end
     if slide then slide:SetScale(s) end
     fontScale = Pinky.FontFactor(s)
-    for _, e in ipairs(fonts) do e[1]:SetFont(FONT, e[2] * fontScale, "") end
+    for _, e in ipairs(fonts) do e[1]:SetFont(FONT, e[2] * fontScale, e[3]) end
     if f and f:IsShown() then Pinky.Refresh() end
 end
 
@@ -424,25 +449,24 @@ local function Plate(i)
     p:SetSize(pw * s, ph * s)
     local x = ROSTER_L + ((ROSTER_R - ROSTER_L) - 30 - pw * s) / 2
     p:SetPoint("TOPLEFT", f, "TOPLEFT", x, -(IN_T + 8 + (i - 1) * rowH))
-    p.bg = p:CreateTexture(nil, "ARTWORK")
+    p.bg = p:CreateTexture(nil, "ARTWORK", nil, -1)
     p.bg:SetAllPoints(p)
     p.bg:SetTexture(D.Tex("pf_row_normal"))
     TC(p.bg, "pf_row_normal")
     p.bg.pfName = "pf_row_normal"
-    -- Klassensymbol links (Ring ist im Bild)
-    p.class = p:CreateTexture(nil, "OVERLAY")
-    p.class:SetSize(ph * s * 0.92, ph * s * 0.92)
-    p.class:SetPoint("LEFT", p, "LEFT", -ph * s * 0.18, 0)
-    -- Berufe rechts
-    p.prof1 = p:CreateTexture(nil, "OVERLAY")
-    p.prof1:SetSize(ph * s * Pinky.PROF_SIZE, ph * s * Pinky.PROF_SIZE)
-    p.prof1:SetPoint("TOPRIGHT", p, "TOPRIGHT", -Pinky.PROF_INSET, -10)
-    p.prof2 = p:CreateTexture(nil, "OVERLAY")
-    p.prof2:SetSize(ph * s * Pinky.PROF_SIZE, ph * s * Pinky.PROF_SIZE)
-    p.prof2:SetPoint("BOTTOMRIGHT", p, "BOTTOMRIGHT", -Pinky.PROF_INSET, 10)
+    -- Stufen-Knopf links: Porträtring mit Glasscheibe in Klassenfarbe und der Stufe (seit 0.2.9)
+    local ks = ph * s * 0.92
+    p.ring = Tex(p, "pf_portrait_frame", "ARTWORK", 1, 2)
+    p.ring:SetSize(ks, ks)
+    p.ring:SetPoint("LEFT", p, "LEFT", -ph * s * 0.18, 0)
+    p.disc = Tex(p, "pf_disc", "ARTWORK", 1, 1)
+    p.disc:SetSize(ks * 0.82, ks * 0.82)
+    p.disc:SetPoint("CENTER", p.ring, "CENTER", 0, 0)
+    p.lvl = Font(p, 17, 1, 1, 1, nil, "OUTLINE")   -- Umriss: lesbar auch auf hellem Glas (Schurke, Priester)
+    p.lvl:SetPoint("CENTER", p.ring, "CENTER", 0, 0)
     p.name = Font(p, 15, 0.45, 0.9, 0.3)
     p.name:SetPoint("LEFT", p, "LEFT", ph * s * 0.85, 0)
-    p.name:SetPoint("RIGHT", p, "RIGHT", -(Pinky.PROF_INSET + ph * s * Pinky.PROF_SIZE + 4), 0)
+    p.name:SetPoint("RIGHT", p, "RIGHT", -Pinky.PROF_INSET, 0)
     p.name:SetHeight(ph * s * 0.8)
     p.name:SetWordWrap(true)                 -- lange Namen in zwei Zeilen statt "..."
     if p.name.SetMaxLines then p.name:SetMaxLines(2) end
@@ -451,9 +475,11 @@ local function Plate(i)
     p.lamp:SetPoint("LEFT", p, "RIGHT", -3, 0)   -- haengt am Schild (Leuchte)
     p:SetScript("OnEnter", function(self)
         if self.e and Pinky.selected ~= self.e.full then Swap(self.bg, "pf_row_hover") end
+        if self.e then Pinky.ShowTip(self, self.e) end
     end)
     p:SetScript("OnLeave", function(self)
         if self.e and Pinky.selected ~= self.e.full then Swap(self.bg, "pf_row_normal") end
+        if G.GameTooltip then G.GameTooltip:Hide() end
     end)
     p:SetScript("OnClick", function(self)
         if self.e then Pinky.Select(self.e.full) end
@@ -560,6 +586,22 @@ function Pinky.Scroll(step)
     end
 end
 
+-- Tooltip eines Schilds: Name in Klassenfarbe, Stufe und Klasse, Rang, Gebiet oder offline, Berufe
+function Pinky.ShowTip(owner, e)
+    local tt = G.GameTooltip
+    if not tt then return end
+    tt:SetOwner(owner, "ANCHOR_RIGHT")
+    tt:SetText(e.name, Pinky.ClassColor(e.class, true))
+    tt:AddLine(string.format("%s %d %s", L.level, e.level or 0, e.className or ""), 1, 1, 1)
+    if e.rank ~= "" then tt:AddLine(e.rank, 0.45, 0.9, 0.3) end
+    tt:AddLine(e.online and e.zone or L.offline, 0.8, 0.8, 0.8)
+    local profs = {}
+    if e.prof1 then profs[#profs + 1] = Pinky.ProfName(e.prof1) end
+    if e.prof2 then profs[#profs + 1] = Pinky.ProfName(e.prof2) end
+    if #profs > 0 then tt:AddLine(table.concat(profs, ", "), 1, 0.82, 0.4) end
+    tt:Show()
+end
+
 local function SetArrow(b, on)
     if on then b:Enable() Bright(b.t, "normal") else b:Disable() Bright(b.t, "disabled") end
 end
@@ -574,11 +616,11 @@ function Pinky.RefreshRoster()
         p.e = e
         if e then
             p.name:SetText(e.name)
-            if e.online then p.name:SetTextColor(0.45, 0.9, 0.3) else p.name:SetTextColor(0.6, 0.6, 0.58) end
-            p.class:SetTexture(D.ClassTex(e.class) or "Interface\\Icons\\INV_Misc_QuestionMark")
-            p.class:SetDesaturated(not e.online)
-            Pinky.SetCraft(p.prof1, e.prof1)
-            Pinky.SetCraft(p.prof2, e.prof2)
+            p.name:SetTextColor(Pinky.ClassColor(e.class, e.online))
+            local r, g, b = Pinky.ClassColor(e.class, e.online)
+            p.disc:SetVertexColor(r, g, b)
+            p.lvl:SetText(e.level > 0 and e.level or "?")
+            if e.online then p.lvl:SetTextColor(1, 1, 1) else p.lvl:SetTextColor(0.75, 0.75, 0.75) end
             Swap(p.lamp, e.online and "pf_lamp_on" or "pf_lamp_off")
             Swap(p.bg, Pinky.selected == e.full and "pf_row_selected" or "pf_row_normal")
             p:Show()
@@ -725,7 +767,7 @@ function Pinky.RefreshList()
             r.cells[5]:SetText(e.zone)
             local c = e.online and 0.92 or 0.55
             for k = 1, #r.cells do r.cells[k]:SetTextColor(c, c * 0.96, c * 0.87) end
-            if e.online then r.cells[1]:SetTextColor(0.45, 0.9, 0.3) end
+            r.cells[1]:SetTextColor(Pinky.ClassColor(e.class, e.online))
             r.dot:SetColorTexture(e.online and 0.4 or 0.6, e.online and 0.9 or 0.15, e.online and 0.3 or 0.1, 1)
             if Pinky.selected == e.full then r.sel:Show() else r.sel:Hide() end
             r:Show()
@@ -757,10 +799,14 @@ function Pinky.BuildCard()
     c.name:SetPoint("TOP", f, "TOPLEFT", L0 + w / 2, -T0)
     c.name:SetWidth(w)
     c.name:SetWordWrap(true)
-    c.level = Font(c, 30, 1, 1, 1)
-    c.level:SetPoint("TOP", c.name, "BOTTOM", 0, -4)
+    -- Klassen-Icon und Stufe nebeneinander
+    c.class = c:CreateTexture(nil, "OVERLAY")
+    c.class:SetSize(50, 50)
+    c.class:SetPoint("TOPRIGHT", c.name, "BOTTOM", -2, -4)
+    c.level = Font(c, 30, 1, 1, 1, "LEFT")
+    c.level:SetPoint("LEFT", c.class, "RIGHT", 8, 0)
     c.rank = Font(c, 11, 0.45, 0.9, 0.3)
-    c.rank:SetPoint("TOP", c.level, "BOTTOM", 0, -2)
+    c.rank:SetPoint("TOP", c.name, "BOTTOM", 0, -58)
     c.rank:SetWidth(w)
     c.zone = Font(c, 10, 0.8, 0.75, 0.65)
     c.zone:SetWidth(w)
@@ -788,8 +834,8 @@ function Pinky.BuildCard()
     c.onote.box:SetPoint("TOP", c.note.box, "BOTTOM", 0, -6)
     c.prof1 = c:CreateTexture(nil, "OVERLAY")
     c.prof2 = c:CreateTexture(nil, "OVERLAY")
-    c.prof1:SetSize(44, 44)
-    c.prof2:SetSize(44, 44)
+    c.prof1:SetSize(50, 50)
+    c.prof2:SetSize(50, 50)
     c.prof1:SetPoint("BOTTOMRIGHT", f, "TOPLEFT", L0 + w / 2 - 4, -(CARD_Y + b[4] - 10))
     c.prof2:SetPoint("BOTTOMLEFT", f, "TOPLEFT", L0 + w / 2 + 4, -(CARD_Y + b[4] - 10))
 end
@@ -797,7 +843,7 @@ end
 local function FieldHeight(fd, text)
     fd.txt:SetText(text ~= "" and text or "-")
     local h = (fd.txt.GetStringHeight and fd.txt:GetStringHeight() or 12) + 20
-    fd.box:SetHeight(math.max(30, math.min(46, h)))
+    fd.box:SetHeight(math.max(30, math.min(40, h)))
 end
 
 function Pinky.Select(full)
@@ -810,7 +856,7 @@ function Pinky.RefreshCard()
     local e
     for _, r in ipairs(Pinky.rows) do if r.full == Pinky.selected then e = r break end end
     if not e then e = Pinky.rows[1] if e then Pinky.selected = e.full end end
-    local parts = { c.name, c.level, c.rank, c.zone, c.prof1, c.prof2 }
+    local parts = { c.name, c.class, c.level, c.rank, c.zone, c.prof1, c.prof2 }
     local fields = { c.note, c.onote }
     if not e then
         for _, p in ipairs(parts) do p:Hide() end
@@ -819,7 +865,9 @@ function Pinky.RefreshCard()
     end
     for _, p in ipairs(parts) do p:Show() end
     c.name:SetText(e.name)
-    if e.online then c.name:SetTextColor(0.45, 0.9, 0.3) else c.name:SetTextColor(0.65, 0.65, 0.62) end
+    c.name:SetTextColor(Pinky.ClassColor(e.class, e.online))
+    c.class:SetTexture(D.ClassTex(e.class) or "Interface\\Icons\\INV_Misc_QuestionMark")
+    c.class:SetDesaturated(not e.online)
     c.level:SetText(e.level > 0 and e.level or "?")
     c.rank:SetText(e.rank)
     c.zone:SetText(e.online and e.zone or L.offline)
