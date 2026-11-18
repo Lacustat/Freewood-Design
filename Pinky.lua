@@ -521,7 +521,7 @@ local function Plate(i)
     local ds = ph * s * Pinky.DISC_SIZE
     p.disc = Tex(p, "pf_disc", "ARTWORK", 1, 1)
     p.disc:SetSize(ds, ds)
-    p.disc:SetPoint("LEFT", p, "LEFT", ph * s * 0.16 + 4, 0)   -- 4 Einheiten weiter rechts (etwa 7 Pixel bei Lacustat)
+    p.disc:SetPoint("LEFT", p, "LEFT", ph * s * 0.16 + 10, 0)   -- 10 Einheiten weiter rechts (etwa 18 Pixel bei Lacustat)
     p.lvl = Font(p, 14, 1, 1, 1, nil, "OUTLINE")   -- Umriss: lesbar auch auf hellem Glas (Schurke, Priester)
     p.lvl:SetPoint("CENTER", p.disc, "CENTER", 0, 0)
     p.name = Font(p, 15, 0.45, 0.9, 0.3)
@@ -949,7 +949,7 @@ end
 -- 6b. Filter oben im Band (seit 0.2.16): Online (nur online / alle), Name und Stufe (Roster-Sortierung)
 ------------------------------------------------------------------------
 
-local FILTER_X, FILTER_Y = 344, 58     -- linke Kante und Mitte (Band oben zwischen Titel-Schild und rechtem Schild)
+local FILTER_X, FILTER_Y = 344, 68     -- linke Kante und Mitte (Band oben zwischen Titel-Schild und rechtem Schild)
 local FILTER_W, FILTER_H, FILTER_GAP = 84, 28, 6
 
 -- Roster-Sortierknopf: gleiche Spalte dreht die Richtung; Name beginnt A-Z, Stufe beginnt mit der hoechsten
