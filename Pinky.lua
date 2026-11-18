@@ -37,7 +37,7 @@ Pinky.ROW_SCALE = 0.74
 Pinky.ROW_GAP = 6
 Pinky.LIST_ROW_H = 18
 Pinky.CARD_PROF, Pinky.CARD_PROF_SMALL = 62, 40   -- Berufs-Icons auf der Karte (ohne / mit Offiziersnotiz)
-Pinky.DISC_SIZE = 0.5        -- Stufen-Scheibe auf dem Schild: Anteil der Schildhoehe
+Pinky.DISC_SIZE = 0.42        -- Stufen-Scheibe auf dem Schild: Anteil der Schildhoehe
 Pinky.PROF_SIZE = 0.36       -- Berufs-Icons auf dem Schild: Anteil der Schildhoehe
 Pinky.PROF_INSET = 30       -- Berufs-Icons: Abstand vom rechten Rand des Schildes (vor der Zierleiste)
 Pinky.FONT_MIN_SCALE = 0.9  -- Schrift wird nicht kleiner als bei 90 %
@@ -106,6 +106,7 @@ local function Tex(parent, name, layer, scale, sub)
 end
 -- Textur wechseln (gleiche Groesse, gleicher Bereich, z. B. normal -> hover)
 local function Swap(t, name)
+    if t.pfStates then t:Set(name) return end
     if t.pfName == name then return end
     t:SetTexture(D.Tex(name))
     local l, r, top, b = D.Box(name)
@@ -117,6 +118,27 @@ local function TC(t, name)
     local l, r, top, b = D.Box(name)
     t:SetTexCoord(l, r, top, b)
 end
+-- Mehrere Zustaende als eigene Texturen, alle beim Aufbau geladen; Wechsel nur ueber Zeigen/Verbergen.
+-- So muss beim ersten Ueberfahren nichts nachgeladen werden (kein kurzes Blinken, seit 0.2.11).
+local function States(parent, names, layer, sub)
+    local o = { tex = {}, cur = nil, pfStates = true }
+    for _, n in ipairs(names) do
+        local t = parent:CreateTexture(nil, layer or "ARTWORK", nil, sub)
+        t:SetTexture(D.Tex(n))
+        TC(t, n)
+        t:SetAllPoints(parent)
+        t:Hide()
+        o.tex[n] = t
+    end
+    function o:Set(n)
+        if self.cur == n or not self.tex[n] then return end
+        for k, t in pairs(self.tex) do if k == n then t:Show() else t:Hide() end end
+        self.cur = n
+    end
+    o:Set(names[1])
+    return o
+end
+Pinky.States = States
 -- Ecke oben links des genutzten Bereichs einer Textur, deren volles Bild bei (x, y) laege
 local function At(t, parent, name, x, y, scale)
     local b = D.Pinky.box[name]
@@ -367,15 +389,28 @@ local function Build()
     local close = G.CreateFrame("Button", nil, f)
     close:SetSize(46, 46)
     close:SetPoint("CENTER", f, "TOPLEFT", 921, -51)   -- Mitte des Lochs (gemessen)
-    local ct = close:CreateTexture(nil, "ARTWORK")
-    ct:SetAllPoints(close)
-    ct:SetTexture(D.Tex("pf_close_normal"))
-    close:SetScript("OnEnter", function() ct:SetTexture(D.Tex("pf_close_hover")) end)
-    close:SetScript("OnLeave", function() ct:SetTexture(D.Tex("pf_close_normal")) end)
-    close:SetScript("OnMouseDown", function() ct:SetTexture(D.Tex("pf_close_pushed")) end)
-    close:SetScript("OnMouseUp", function() ct:SetTexture(D.Tex("pf_close_hover")) end)
+    local ct = States(close, { "pf_close_normal", "pf_close_hover", "pf_close_pushed" })
+    close:SetScript("OnEnter", function() ct:Set("pf_close_hover") end)
+    close:SetScript("OnLeave", function() ct:Set("pf_close_normal") end)
+    close:SetScript("OnMouseDown", function() ct:Set("pf_close_pushed") end)
+    close:SetScript("OnMouseUp", function() ct:Set("pf_close_hover") end)
     close:SetScript("OnClick", function() f:Hide() end)
     f.close = close
+
+    -- Klassen- und Berufsbilder einmal vorladen (unsichtbar), damit die Detailkarte beim Wechsel nicht blinkt
+    local pre = G.CreateFrame("Frame", nil, f)
+    pre:SetSize(1, 1)
+    pre:SetPoint("TOPLEFT", f, "TOPLEFT", 0, 0)
+    pre:SetAlpha(0)
+    for _, group in ipairs({ "class", "craft" }) do
+        for _, n in ipairs(D.Pinky.files[group] or {}) do
+            local t = pre:CreateTexture(nil, "BACKGROUND")
+            t:SetTexture(D.Tex(n))
+            t:SetSize(1, 1)
+            t:SetPoint("TOPLEFT", pre, "TOPLEFT", 0, 0)
+        end
+    end
+    f.preload = pre
 
     Pinky.BuildRoster()
     Pinky.BuildList()
@@ -451,11 +486,7 @@ local function Plate(i)
     p:SetSize(pw * s, ph * s)
     local x = ROSTER_L + ((ROSTER_R - ROSTER_L) - 30 - pw * s) / 2
     p:SetPoint("TOPLEFT", f, "TOPLEFT", x, -(IN_T + 8 + (i - 1) * rowH))
-    p.bg = p:CreateTexture(nil, "ARTWORK", nil, -1)
-    p.bg:SetAllPoints(p)
-    p.bg:SetTexture(D.Tex("pf_row_normal"))
-    TC(p.bg, "pf_row_normal")
-    p.bg.pfName = "pf_row_normal"
+    p.bg = States(p, { "pf_row_normal", "pf_row_hover", "pf_row_selected" }, "ARTWORK", -1)
     -- Stufen-Knopf links: Porträtring mit Glasscheibe in Klassenfarbe und der Stufe (seit 0.2.9)
     local ks = ph * s * 0.92
     -- Glasscheibe ohne Ring, ganz im Schild (seit 0.2.10)
@@ -472,8 +503,11 @@ local function Plate(i)
     p.name:SetWordWrap(true)                 -- lange Namen in zwei Zeilen statt "..."
     if p.name.SetMaxLines then p.name:SetMaxLines(2) end
     -- Lampe rechts neben dem Schild
-    p.lamp = Tex(f.roster, "pf_lamp_on", "ARTWORK", 0.3)
+    local _, _, _, _, lw, lh = D.Box("pf_lamp_on")
+    p.lamp = G.CreateFrame("Frame", nil, f.roster)
+    p.lamp:SetSize(lw * 0.3, lh * 0.3)
     p.lamp:SetPoint("LEFT", p, "RIGHT", -3, 0)   -- haengt am Schild (Leuchte)
+    p.lamp.st = States(p.lamp, { "pf_lamp_on", "pf_lamp_off" })
     p:SetScript("OnEnter", function(self)
         if self.e and Pinky.selected ~= self.e.full then Swap(self.bg, "pf_row_hover") end
         if self.e then Pinky.ShowTip(self, self.e) end
@@ -537,12 +571,9 @@ function Pinky.BuildRoster()
     lv:SetSize(44, 50)
     lv:SetPoint("BOTTOMLEFT", f, "TOPLEFT", IN_L + 88, -(IN_B + 50))   -- im unteren Rahmen, links vom Handrad
     lv:SetFrameLevel(f:GetFrameLevel() + 6)
-    lv.t = lv:CreateTexture(nil, "ARTWORK")
-    lv.t:SetAllPoints(lv)
+    lv.t = States(lv, { "pf_listmode_off", "pf_listmode_off_hover", "pf_listmode_on", "pf_listmode_on_hover" })
     local function LeverTex(hover)
-        local name = "pf_listmode_" .. (DB().listMode and "on" or "off") .. (hover and "_hover" or "")
-        lv.t:SetTexture(D.Tex(name))
-        TC(lv.t, name)
+        lv.t:Set("pf_listmode_" .. (DB().listMode and "on" or "off") .. (hover and "_hover" or ""))
     end
     lv.Update = LeverTex
     lv:SetScript("OnEnter", function(self)
@@ -622,7 +653,7 @@ function Pinky.RefreshRoster()
             p.disc:SetVertexColor(r, g, b)
             p.lvl:SetText(e.level > 0 and e.level or "?")
             if e.online then p.lvl:SetTextColor(1, 1, 1) else p.lvl:SetTextColor(0.75, 0.75, 0.75) end
-            Swap(p.lamp, e.online and "pf_lamp_on" or "pf_lamp_off")
+            p.lamp.st:Set(e.online and "pf_lamp_on" or "pf_lamp_off")
             Swap(p.bg, Pinky.selected == e.full and "pf_row_selected" or "pf_row_normal")
             p:Show()
             p.lamp:Show()
@@ -679,9 +710,10 @@ function Pinky.BuildList()
         fs:SetText(L[c[4]])
         hb.fs = fs
         -- Richtungspfeil aus den Scroll-Pfeilen (klein)
-        hb.arrow = hb:CreateTexture(nil, "OVERLAY")
+        hb.arrow = G.CreateFrame("Frame", nil, hb)
         hb.arrow:SetSize(14, 6)
         hb.arrow:SetPoint("RIGHT", hb, "RIGHT", -2, 0)
+        hb.arrow.st = States(hb.arrow, { "pf_scroll_up", "pf_scroll_down" }, "OVERLAY")
         hb.arrow:Hide()
         hb.key = c[1]
         hb:SetScript("OnEnter", function(self) self.fs:SetTextColor(1, 1, 1) end)
@@ -739,9 +771,7 @@ function Pinky.UpdateHeads()
     local key, asc = DB().sortKey, DB().sortAsc ~= false
     for _, hb in ipairs(f.list.heads) do
         if hb.key == key then
-            local name = asc and "pf_scroll_up" or "pf_scroll_down"
-            hb.arrow:SetTexture(D.Tex(name))
-            TC(hb.arrow, name)
+            hb.arrow.st:Set(asc and "pf_scroll_up" or "pf_scroll_down")
             hb.arrow:Show()
             hb.fs:SetTextColor(1, 0.95, 0.75)
         else
@@ -928,11 +958,7 @@ function Pinky.BuildSlide()
         b:SetSize(bb[3] - bb[1], bb[4] - bb[2])
         b:SetPoint("TOPLEFT", parent, "TOPLEFT", x + bb[1], -bb[2])
         b:SetFrameLevel(level)
-        b.t = b:CreateTexture(nil, "ARTWORK")
-        b.t:SetAllPoints(b)
-        b.t:SetTexture(D.Tex("pf_slide_btn_normal"))
-        TC(b.t, "pf_slide_btn_normal")
-        b.t.pfName = "pf_slide_btn_normal"
+        b.t = States(b, { "pf_slide_btn_normal", "pf_slide_btn_hover", "pf_slide_btn_pushed" })
         b:SetScript("OnEnter", function(self) Swap(self.t, "pf_slide_btn_hover") end)
         b:SetScript("OnLeave", function(self) Swap(self.t, "pf_slide_btn_normal") end)
         b:SetScript("OnMouseDown", function(self) Swap(self.t, "pf_slide_btn_pushed") end)
