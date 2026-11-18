@@ -179,8 +179,9 @@ eq(tipLines[2]:find("60", 1, true) ~= nil, true, "Tooltip: Stufe")
 eq(tipLines[#tipLines]:find("165", 1, true) ~= nil or tipLines[#tipLines]:find("leather", 1, true) ~= nil, true, "Tooltip: Berufe")
 
 -- 7. Befehle
-SlashCmdList.FWPINKY("groesse 300")
-eq(FreewoodDesignDB.pinky.scale, 150, "Groesse begrenzt")
+SlashCmdList.FWPINKY("groesse 80")
+eq(FreewoodDesignDB.pinky.scale, nil, "Groesse nicht aenderbar")
+eq(P.SCALE, 1.5, "fest 150 %")
 SlashCmdList.FWPINKY("reset")
 eq(FreewoodDesignDB.pinky.pos, nil, "Position zurueck")
 

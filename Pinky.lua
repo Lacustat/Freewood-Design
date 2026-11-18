@@ -37,6 +37,7 @@ Pinky.ROW_SCALE = 0.74
 Pinky.ROW_GAP = 6
 Pinky.LIST_ROW_H = 18
 Pinky.CARD_PROF, Pinky.CARD_PROF_SMALL = 62, 40   -- Berufs-Icons auf der Karte (ohne / mit Offiziersnotiz)
+Pinky.SCALE = 1.5           -- Groesse fest 150 % (Lacustat, 18.11.: auf Full HD passend)
 Pinky.DISC_SIZE = 0.42        -- Stufen-Scheibe auf dem Schild: Anteil der Schildhoehe
 Pinky.PROF_SIZE = 0.36       -- Berufs-Icons auf dem Schild: Anteil der Schildhoehe
 Pinky.PROF_INSET = 30       -- Berufs-Icons: Abstand vom rechten Rand des Schildes (vor der Zierleiste)
@@ -54,9 +55,8 @@ local L = {
     listmode = "Listenansicht an/aus",
     colName = "Name", colLevel = "Stufe", colClass = "Klasse", colRank = "Rang", colZone = "Gebiet",
     slideSoon = "Hier kommen die Bereiche hin.",
-    scaleSet = "Pinky: Groesse %d %%",
     reset = "Pinky: Position zurueckgesetzt.",
-    help = "/fwpinky (Fenster), /fwpinky groesse 50-150, /fwpinky symbole blizzard|kasten|pinky, /fwpinky reset",
+    help = "/fwpinky (Fenster), /fwpinky symbole blizzard|kasten|pinky, /fwpinky reset",
     iconsSet = "Pinky: Berufs-Symbole %s",
 }
 if G.GetLocale and G.GetLocale() ~= "deDE" then
@@ -65,8 +65,8 @@ if G.GetLocale and G.GetLocale() ~= "deDE" then
     L.level, L.note, L.onote, L.listmode = "Level", "Note", "Officer note", "List view on/off"
     L.colName, L.colLevel, L.colClass, L.colRank, L.colZone = "Name", "Level", "Class", "Rank", "Zone"
     L.slideSoon = "The sections go here."
-    L.scaleSet, L.reset = "Pinky: size %d %%", "Pinky: position reset."
-    L.help = "/fwpinky (window), /fwpinky groesse 50-150, /fwpinky symbole blizzard|kasten|pinky, /fwpinky reset"
+    L.reset = "Pinky: position reset."
+    L.help = "/fwpinky (window), /fwpinky symbole blizzard|kasten|pinky, /fwpinky reset"
     L.iconsSet = "Pinky: profession icons %s"
 end
 Pinky.L = L
@@ -443,7 +443,7 @@ function Pinky.FontFactor(s)
 end
 
 function Pinky.ApplyScale()
-    local s = (tonumber(DB().scale) or 90) / 100
+    local s = Pinky.SCALE   -- fest im Design (seit 0.2.12), nicht aenderbar
     if f then f:SetScale(s) end
     if slide then slide:SetScale(s) end
     fontScale = Pinky.FontFactor(s)
@@ -1054,16 +1054,7 @@ G.SlashCmdList = G.SlashCmdList or {}
 G.SlashCmdList["FWPINKY"] = function(msg)
     msg = tostring(msg or ""):lower()
     local cmd, arg = msg:match("^%s*(%S*)%s*(.-)%s*$")
-    if cmd == "groesse" or cmd == "size" or cmd == "scale" then
-        local n = tonumber(arg)
-        if n then
-            DB().scale = math.max(50, math.min(150, n))
-            Pinky.ApplyScale()
-            Say(string.format(L.scaleSet, DB().scale))
-        else
-            Say(L.help)
-        end
-    elseif cmd == "icons" or cmd == "symbole" then
+    if cmd == "icons" or cmd == "symbole" then
         if arg == "kasten" or arg == "box" then
             DB().craftIcons, DB().craftBlend = "blizzard", "box"
         elseif arg == "pinky" then
