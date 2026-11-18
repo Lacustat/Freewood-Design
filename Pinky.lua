@@ -404,7 +404,7 @@ local function Build()
     local pre = G.CreateFrame("Frame", nil, f)
     pre:SetSize(1, 1)
     pre:SetPoint("TOPLEFT", f, "TOPLEFT", 0, 0)
-    pre:SetAlpha(0)
+    pre:SetAlpha(0.01)   -- fast unsichtbar, aber gezeichnet: nur so laedt das Spiel die Dateien wirklich (0.2.14)
     for _, group in ipairs({ "class", "craft" }) do
         for _, n in ipairs(D.Pinky.files[group] or {}) do
             local t = pre:CreateTexture(nil, "BACKGROUND")

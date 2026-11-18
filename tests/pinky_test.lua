@@ -58,6 +58,7 @@ _G.Freewood = { Guild = {
 _G.SlashCmdList = {}
 
 assert(loadfile("Design.lua"))()
+assert(loadfile("Atlas.lua"))()
 assert(loadfile("Pinky.lua"))("Freewood-Design")
 local P = FreewoodPinky
 eq(type(P), "table", "Pinky geladen")

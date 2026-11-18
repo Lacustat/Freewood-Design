@@ -3,10 +3,11 @@
 ## Notes: Graphics for the Freewood designs (first: Pinky Freewood). Holds the textures and the Pinky probe window (/fwpinky).
 ## Notes-deDE: Grafiken für die Freewood-Designs (zuerst: Pinky Freewood). Enthält die Texturen und das Pinky-Probefenster (/fwpinky).
 ## Author: Lacustat
-## Version: 0.2.13
+## Version: 0.2.14
 ## SavedVariables: FreewoodDesignDB
 ## OptionalDeps: Freewood-Core, Freewood-Guild
 ## IconTexture: Interface\AddOns\Freewood-Design\Media\Pinky\ui\pf_logo_gear
 
 Design.lua
+Atlas.lua
 Pinky.lua
