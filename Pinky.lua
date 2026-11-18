@@ -255,7 +255,7 @@ local function Build()
 
     -- Deko ausserhalb des Rahmens
     local pen = Tex(f, "pf_pennant", "ARTWORK")
-    At(pen, f, "pf_pennant", 948, 22)
+    At(pen, f, "pf_pennant", 936, 16)   -- haengt an der rechten oberen Ecke
     local pipe = Tex(f, "pf_pipe_bottom", "BACKGROUND", 1, -1)
     At(pipe, f, "pf_pipe_bottom", 300, 480)
     local logo = Tex(f, "pf_logo_gear", "OVERLAY", 0.95)
@@ -372,7 +372,7 @@ local function Plate(i)
     if p.name.SetMaxLines then p.name:SetMaxLines(2) end
     -- Lampe rechts neben dem Schild
     p.lamp = Tex(f.roster, "pf_lamp_on", "ARTWORK", 0.3)
-    p.lamp:SetPoint("LEFT", p, "RIGHT", 4, 0)
+    p.lamp:SetPoint("LEFT", p, "RIGHT", -3, 0)   -- haengt am Schild (Leuchte)
     p:SetScript("OnEnter", function(self)
         if self.e and Pinky.selected ~= self.e.full then Swap(self.bg, "pf_row_hover") end
     end)
