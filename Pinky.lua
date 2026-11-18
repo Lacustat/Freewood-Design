@@ -247,7 +247,7 @@ function Pinky.SetSort(key)
     Pinky.Refresh()
 end
 
--- Berufs-Symbole: "blizzard" (Spiel-Icons, rund maskiert, besser erkennbar bei kleiner Groesse) oder "pinky"
+-- Berufs-Symbole: "blizzard" (Spiel-Icons, eckig, besser erkennbar bei kleiner Groesse) oder "pinky"
 -- (eigene Bilder aus Freewood-Design). Einstellung DB().craftIcons, Standard "blizzard" (Test seit 0.2.6).
 Pinky.BLIZZ_CRAFT = {
     [171] = "Interface\\Icons\\Trade_Alchemy", [164] = "Interface\\Icons\\Trade_BlackSmithing",
@@ -258,7 +258,6 @@ Pinky.BLIZZ_CRAFT = {
     [129] = "Interface\\Icons\\Spell_Holy_SealOfSacrifice", [356] = "Interface\\Icons\\Trade_Fishing",
     [755] = "Interface\\Icons\\INV_Misc_Gem_01", [773] = "Interface\\Icons\\INV_Inscription_Tradeskill01",
 }
-Pinky.ROUND_MASK = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
 
 function Pinky.CraftStyle()
     return DB().craftIcons == "pinky" and "pinky" or "blizzard"
@@ -271,15 +270,8 @@ function Pinky.SetCraft(t, id)
     local blizz = path ~= nil
     path = path or D.CraftBySkill(id)
     t:SetTexture(path)
-    if blizz then
-        t:SetTexCoord(0.07, 0.93, 0.07, 0.93)   -- Rand der Spiel-Icons weg
-        if t.SetMask and not t.pfMasked then
-            if pcall(t.SetMask, t, Pinky.ROUND_MASK) then t.pfMasked = true end
-        end
-    else
-        t:SetTexCoord(0, 1, 0, 1)
-        if t.pfMasked and t.SetMask then pcall(t.SetMask, t, "") t.pfMasked = nil end
-    end
+    -- Spiel-Icons eckig mit beschnittenem Rand (runde Maske verzerrte sie in Forever, 0.2.6)
+    if blizz then t:SetTexCoord(0.07, 0.93, 0.07, 0.93) else t:SetTexCoord(0, 1, 0, 1) end
     if path then t:Show() else t:Hide() end
     return path ~= nil
 end
