@@ -13,7 +13,7 @@
 local D = _G.FreewoodDesign or {}
 _G.FreewoodDesign = D
 
-D.VERSION = "0.2.17"
+D.VERSION = "0.2.18"
 D.ROOT = "Interface\\AddOns\\Freewood-Design\\Media\\"
 
 ------------------------------------------------------------------------
@@ -62,21 +62,21 @@ D.Pinky.box = {
     pf_class_shaman = { 0, 0, 255, 254, 256, 256 },
     pf_class_warlock = { 0, 0, 255, 254, 256, 256 },
     pf_class_warrior = { 0, 0, 255, 255, 256, 256 },
-    pf_craft_alchemy = { 1, 0, 255, 254, 256, 256 },
-    pf_craft_blacksmithing = { 0, 0, 255, 255, 256, 256 },
-    pf_craft_cooking = { 0, 0, 254, 254, 256, 256 },
-    pf_craft_enchanting = { 1, 0, 255, 254, 256, 256 },
-    pf_craft_engineering = { 1, 0, 254, 254, 256, 256 },
-    pf_craft_firstaid = { 0, 0, 255, 255, 256, 256 },
-    pf_craft_fishing = { 1, 0, 255, 254, 256, 256 },
-    pf_craft_herbalism = { 1, 0, 255, 254, 256, 256 },
-    pf_craft_inscription = { 0, 0, 255, 254, 256, 256 },
-    pf_craft_jewelcrafting = { 0, 0, 254, 254, 256, 256 },
-    pf_craft_leatherworking = { 0, 0, 255, 255, 256, 256 },
-    pf_craft_mining = { 1, 0, 255, 254, 256, 256 },
-    pf_craft_skinning = { 1, 0, 254, 254, 256, 256 },
-    pf_craft_survival = { 0, 0, 254, 254, 256, 256 },
-    pf_craft_tailoring = { 0, 0, 255, 254, 256, 256 },
+    pf_craft_alchemy = { 0, 1, 252, 256, 256, 256 },
+    pf_craft_blacksmithing = { 0, 3, 251, 256, 256, 256 },
+    pf_craft_cooking = { 0, 0, 253, 256, 256, 256 },
+    pf_craft_enchanting = { 0, 4, 252, 255, 256, 256 },
+    pf_craft_engineering = { 0, 1, 252, 256, 256, 256 },
+    pf_craft_firstaid = { 0, 0, 256, 256, 256, 256 },
+    pf_craft_fishing = { 0, 0, 253, 256, 256, 256 },
+    pf_craft_herbalism = { 0, 0, 252, 256, 256, 256 },
+    pf_craft_inscription = { 0, 0, 252, 256, 256, 256 },
+    pf_craft_jewelcrafting = { 0, 0, 253, 256, 256, 256 },
+    pf_craft_leatherworking = { 0, 4, 251, 255, 256, 256 },
+    pf_craft_mining = { 0, 3, 251, 256, 256, 256 },
+    pf_craft_skinning = { 0, 1, 252, 256, 256, 256 },
+    pf_craft_survival = { 0, 0, 253, 256, 256, 256 },
+    pf_craft_tailoring = { 0, 4, 251, 256, 256, 256 },
     pf_panel_family_tree = { 0, 0, 1024, 512, 1024, 512 },
     pf_button_hover = { 17, 0, 239, 63, 256, 64 },
     pf_button_normal = { 17, 0, 239, 63, 256, 64 },
