@@ -23,21 +23,21 @@ MAP = {
     "pf_class_icons/pf_class_icon_warrior.png": ("class/pf_class_warrior", IC),
     "pf_class_icons/pf_class_icon_pet.png": ("class/pf_class_pet", IC),
     # Berufe (seit 0.2.18: klarere Icons fuer die Detailkarte aus pf_crafting_icons_detail_view)
-    "pf_crafting_icons_detail_view/pf_crafting_icon_detail_alchemy.png": ("craft/pf_craft_alchemy", IC),
-    "pf_crafting_icons_detail_view/pf_crafting_icon_detail_blacksmith.png": ("craft/pf_craft_blacksmithing", IC),
-    "pf_crafting_icons_detail_view/pf_crafting_icon_detail_cooking.png": ("craft/pf_craft_cooking", IC),
-    "pf_crafting_icons_detail_view/pf_crafting_icon_detail_enchanting.png": ("craft/pf_craft_enchanting", IC),
-    "pf_crafting_icons_detail_view/pf_crafting_icon_detail_firstaid.png": ("craft/pf_craft_firstaid", IC),
-    "pf_crafting_icons_detail_view/pf_crafting_icon_detail_fishing.png": ("craft/pf_craft_fishing", IC),
-    "pf_crafting_icons_detail_view/pf_crafting_icon_detail_herbalism.png": ("craft/pf_craft_herbalism", IC),
-    "pf_crafting_icons_detail_view/pf_crafting_icon_detail_ingenieure.png": ("craft/pf_craft_engineering", IC),
-    "pf_crafting_icons_detail_view/pf_crafting_icon_detail_inscription.png": ("craft/pf_craft_inscription", IC),
-    "pf_crafting_icons_detail_view/pf_crafting_icon_detail_juwe.png": ("craft/pf_craft_jewelcrafting", IC),
-    "pf_crafting_icons_detail_view/pf_crafting_icon_detail_leatherworking.png": ("craft/pf_craft_leatherworking", IC),
-    "pf_crafting_icons_detail_view/pf_crafting_icon_detail_mining.png": ("craft/pf_craft_mining", IC),
-    "pf_crafting_icons_detail_view/pf_crafting_icon_detail_skinning.png": ("craft/pf_craft_skinning", IC),
-    "pf_crafting_icons_detail_view/pf_crafting_icon_detail_survival.png": ("craft/pf_craft_survival", IC),
-    "pf_crafting_icons_detail_view/pf_crafting_icon_detail_tailor.png": ("craft/pf_craft_tailoring", IC),
+    "pf_crafting_icons_detail_view/pf_crafting_icon_detail_alchemy.png": ("craft/pf_craft_alchemy", IC, "center"),
+    "pf_crafting_icons_detail_view/pf_crafting_icon_detail_blacksmith.png": ("craft/pf_craft_blacksmithing", IC, "center"),
+    "pf_crafting_icons_detail_view/pf_crafting_icon_detail_cooking.png": ("craft/pf_craft_cooking", IC, "center"),
+    "pf_crafting_icons_detail_view/pf_crafting_icon_detail_enchanting.png": ("craft/pf_craft_enchanting", IC, "center"),
+    "pf_crafting_icons_detail_view/pf_crafting_icon_detail_firstaid.png": ("craft/pf_craft_firstaid", IC, "center"),
+    "pf_crafting_icons_detail_view/pf_crafting_icon_detail_fishing.png": ("craft/pf_craft_fishing", IC, "center"),
+    "pf_crafting_icons_detail_view/pf_crafting_icon_detail_herbalism.png": ("craft/pf_craft_herbalism", IC, "center"),
+    "pf_crafting_icons_detail_view/pf_crafting_icon_detail_ingenieure.png": ("craft/pf_craft_engineering", IC, "center"),
+    "pf_crafting_icons_detail_view/pf_crafting_icon_detail_inscription.png": ("craft/pf_craft_inscription", IC, "center"),
+    "pf_crafting_icons_detail_view/pf_crafting_icon_detail_juwe.png": ("craft/pf_craft_jewelcrafting", IC, "center"),
+    "pf_crafting_icons_detail_view/pf_crafting_icon_detail_leatherworking.png": ("craft/pf_craft_leatherworking", IC, "center"),
+    "pf_crafting_icons_detail_view/pf_crafting_icon_detail_mining.png": ("craft/pf_craft_mining", IC, "center"),
+    "pf_crafting_icons_detail_view/pf_crafting_icon_detail_skinning.png": ("craft/pf_craft_skinning", IC, "center"),
+    "pf_crafting_icons_detail_view/pf_crafting_icon_detail_survival.png": ("craft/pf_craft_survival", IC, "center"),
+    "pf_crafting_icons_detail_view/pf_crafting_icon_detail_tailor.png": ("craft/pf_craft_tailoring", IC, "center"),
     # Logo
     "pf_logos/pf_logo_gear.png": ("ui/pf_logo_gear", None),
     # Oberflaeche (Groesse bleibt, ausser angegeben)
@@ -94,8 +94,17 @@ MAP = {
 
 def p2(n): return n > 0 and n & (n - 1) == 0
 
-def convert(src, dst, size):
+def convert(src, dst, size, center=False):
     im = Image.open(src).convert("RGBA")
+    if center:
+        # Motiv mittig: auf den genutzten Bereich zuschneiden und quadratisch mittig einsetzen (seit 0.2.19)
+        bb = im.getchannel("A").getbbox()
+        if bb:
+            im = im.crop(bb)
+            side = max(im.size)
+            sq = Image.new("RGBA", (side, side), (0, 0, 0, 0))
+            sq.paste(im, ((side - im.size[0]) // 2, (side - im.size[1]) // 2))
+            im = sq
     if isinstance(size, int): size = (size, size)
     if size and im.size != size:
         im = im.convert("RGBa").resize(size, Image.LANCZOS).convert("RGBA")
@@ -114,9 +123,9 @@ for rel, spec in MAP.items():
     p = os.path.join(SRC, rel)
     if spec is None: continue
     if not os.path.exists(p): missing.append(rel); continue
-    name, size = spec
+    name, size = spec[0], spec[1]
     out = os.path.join(DST, name + ".tga")
-    s = convert(p, out, size)
+    s = convert(p, out, size, len(spec) > 2 and spec[2] == "center")
     total += os.path.getsize(out)
     done.append((name, s))
 for n, s in done: print(f"{n:36} {s[0]}x{s[1]}")
